@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "gbafs"
+version = "0.1.0"
+description = "Graph-Based Automatic Feature Selection for Multi-Class Classification via Mean Simplified Silhouette"
+authors = ["David Levin"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "1.5.3"
+pydantic = "^1.10.9"
+pyyaml = "^6.0"
+scikit-learn = "^1.2.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
