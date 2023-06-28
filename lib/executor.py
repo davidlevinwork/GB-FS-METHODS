@@ -1,7 +1,7 @@
 from .apps.graph_builder.graph_builder import GraphBuilder
 from .apps.data_processor.data_processor import DataProcessor
 
-from .common.config.config import config
+from .config.config import config
 
 
 class Executor:
@@ -12,4 +12,3 @@ class Executor:
     def run():
         data = DataProcessor().run()
         reduced_data = GraphBuilder(data=data).run()
-        x = 5

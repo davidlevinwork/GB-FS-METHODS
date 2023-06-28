@@ -2,8 +2,9 @@ import math
 import numpy as np
 from sklearn.manifold import TSNE
 
+from ...config.config import config
 from ...common.helpers import get_distance
-from ...common.config.config import config
+from ..io_services.plot_service import plot_tsne
 from ...common.models.models import DataObject, GraphData
 
 
@@ -14,6 +15,9 @@ class GraphBuilder:
     def run(self) -> GraphData:
         matrix = self._calculate_separation_matrix()
         reduced_matrix = self._dimensionality_reduction(data=matrix)
+
+        if config.visualization_plots.tsne_plot_enabled:
+            plot_tsne(data=reduced_matrix)
 
         return GraphData(
             matrix=matrix,
@@ -48,9 +52,4 @@ class GraphBuilder:
         tsne = TSNE(n_components=2,
                     n_iter=config.tsne_algorithm.iterations,
                     perplexity=config.tsne_algorithm.perplexity_value)
-        reduced_data = tsne.fit_transform(X=data)
-
-        if config.visualization_plots.tsne_plot_enabled:
-            x = 5
-
-        return reduced_data
+        return tsne.fit_transform(X=data)

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from ..common.config.config import config
+from ..config.config import config
 
 
 def get_distance(df: pd.DataFrame, feature: str, label_1: str, label_2: str) -> float:

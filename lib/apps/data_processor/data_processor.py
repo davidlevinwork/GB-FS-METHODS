@@ -4,7 +4,7 @@ from typing import Tuple
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 
-from ...common.config.config import config
+from ...config.config import config
 from ...common.models.models import (
     DataProps,
     DataObject,
