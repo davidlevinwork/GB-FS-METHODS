@@ -3,28 +3,32 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+from lib.apps.io_services.log_service import log_service
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
+cmap = plt.get_cmap('nipy_spectral')
 
 
-def save_plot(plot: plt, file_name: str):
+def save_plot(plot: plt, folder_name: str, file_name: str, fold_index: int):
     try:
-        full_path = os.path.join(os.path.dirname(__file__), '../../', 'Outputs')
+        full_path = os.path.join(os.path.dirname(__file__), '../../', 'Outputs',
+                                 f'{time_stamp}', f'Fold #{fold_index}', f'{folder_name}')
 
         if not os.path.isdir(full_path):
             os.makedirs(full_path)
 
         plot.savefig(os.path.join(full_path, file_name))
+        plot.close()
 
     except Exception as e:
-        print(f"An error occurred while trying to save the plot: {str(e)}")
+        log_service.log('Critical', f'[Plot Service] - An error occurred while trying to save the plot: {str(e)}')
 
 
-def plot_tsne(data: np.ndarray):
+def plot_tsne(data: np.ndarray, fold_index: int):
     try:
         plt.clf()
-        plt.figure(figsize=(10, 8))
+        plt.figure(figsize=(8, 6))
 
         c = data[:, 0] + data[:, 1]
         plt.scatter(x=data[:, 0], y=data[:, 1], marker='o', c=c, cmap='Wistia')
@@ -34,6 +38,115 @@ def plot_tsne(data: np.ndarray):
         plt.colorbar()
         plt.title(f't-SNE Result')
 
-        save_plot(plot=plt, file_name='t-SNE')
-    except Exception as ex:
-        pass
+        save_plot(plot=plt, folder_name='Dimensionality Reduction', file_name='t-SNE', fold_index=fold_index)
+    except Exception as e:
+        log_service.log('Critical', f'[Plot Service] - An error occurred while creating t_sne graph: {str(e)}')
+
+
+def plot_silhouette(clustering_results: list, fold_index: int):
+    try:
+        plt.clf()
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        colors = ['red', 'green', 'blue']
+
+        for sil_type, color in zip(list(clustering_results[0]['silhouette'].keys()), colors):
+            k_values = [res['k'] for res in clustering_results]
+            sil_values = [res['silhouette'][sil_type] for res in clustering_results]
+            ax.plot(k_values, sil_values, label=sil_type, linestyle='--', c=color)
+
+        y_ticks = []
+        for i in range(1, 10):
+            y_ticks.append(i / 10)
+
+        ax.grid(True, linestyle='-.', color='gray')
+
+        # Set x and y-axis limits to start from 0
+        ax.set_ylim(0, 1)
+        ax.set_xlim(0, max(k_values))
+
+        # Show only the bottom and left ticks
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
+        # Remove top and right spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        ax.set_yticks(y_ticks)
+        ax.set_xlabel('K values')
+        ax.set_ylabel('Silhouette value')
+        ax.set_title('Silhouette Graph')
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=3, shadow=True, fancybox=True)
+
+        plt.tight_layout()
+        save_plot(plot=plt, folder_name='Silhouette', file_name='Silhouette Graph', fold_index=fold_index)
+    except AssertionError as e:
+        log_service.log('Critical', f'[Plot Service] - An error occurred while creating silhouette graph: {str(e)}')
+
+
+def plot_clustering(data: np.ndarray, clustering_results: list, fold_index: int):
+    try:
+        plt.clf()
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        for clustering_result in clustering_results:
+            k = clustering_result['k']
+            centroids = clustering_result['kmedoids']['centroids']
+            labels = clustering_result['kmedoids']['labels']
+            u_labels = np.unique(clustering_result['kmedoids']['labels'])
+            for label in u_labels:
+                plt.scatter(data[labels == label, 0], data[labels == label, 1])
+
+            plt.scatter(centroids[:, 0], centroids[:, 1], marker='o', color='black', facecolors='none', linewidth=1.25)
+
+            # Plot labels
+            plt.xlabel(r'$\lambda_1\psi_1$')
+            plt.ylabel(r'$\lambda_2\psi_2$')
+            plt.title(f'Clustering Result [K={k}]')
+
+            # Show only the bottom and left ticks
+            ax.xaxis.set_ticks_position('bottom')
+            ax.yaxis.set_ticks_position('left')
+
+            # Remove top and right spines
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+
+            plt.tight_layout()
+            save_plot(plot=plt, folder_name='Clustering', file_name=f'Clustering for k={k}', fold_index=fold_index)
+
+    except AssertionError as e:
+        log_service.log('Critical', f'[Plot Service] - An error occurred while creating clustering graph: {str(e)}')
+
+
+def plot_jm_clustering(data: np.ndarray, clustering_results: list, fold_index: int):
+    try:
+        c = data[:, 0] + data[:, 1]
+        for clustering_result in clustering_results:
+            plt.clf()
+            fig, ax = plt.subplots(figsize=(8, 6))
+
+            k = clustering_result['k']
+            centroids = clustering_result['kmedoids']['centroids']
+            plt.scatter(data[:, 0], data[:, 1], c=c, cmap='Wistia')
+            plt.scatter(centroids[:, 0], centroids[:, 1], marker='o', color='black', facecolors='none',
+                        linewidth=1.25, label="GB-AFS")
+
+            plt.xlabel(r'$\lambda_1\psi_1$')
+            plt.ylabel(r'$\lambda_2\psi_2$')
+
+            # Show only the bottom and left ticks
+            ax.xaxis.set_ticks_position('bottom')
+            ax.yaxis.set_ticks_position('left')
+
+            # Remove top and right spines
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+
+            plt.legend()
+            plt.tight_layout()
+            save_plot(plot=plt, folder_name='JM Clustering', file_name=f'JM Clustering for k={k}', fold_index=fold_index)
+
+    except AssertionError as e:
+        log_service.log('Critical', f'[Plot Service] - An error occurred while creating jm-clustering graph: {str(e)}')

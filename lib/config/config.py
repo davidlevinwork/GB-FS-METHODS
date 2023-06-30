@@ -6,7 +6,7 @@ class VisualizationPlots(BaseModel):
     tsne_plot_enabled: bool
     silhouette_plot_enabled: bool
     cluster_plot_enabled: bool
-    clustering_based_jm_enabled: bool
+    jm_cluster_plot_enabled: bool
     accuracy_to_silhouette_enabled: bool
 
 
@@ -26,16 +26,11 @@ class TSNEAlgorithmConfig(BaseModel):
     perplexity_value: int
 
 
-class KMedoidsClusteringConfig(BaseModel):
-    algorithm_method: str
-
-
 class Config(BaseModel):
     operation_mode: str
     data: DataConfig
     cross_validation: CrossValidationConfig
     tsne_algorithm: TSNEAlgorithmConfig
-    k_medoids_clustering: KMedoidsClusteringConfig
     visualization_plots: VisualizationPlots
 
 

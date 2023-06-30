@@ -31,6 +31,6 @@ class DataObject:
 
 
 @dataclass
-class GraphData:
+class GraphObject:
     matrix: np.ndarray
     reduced_matrix: np.ndarray

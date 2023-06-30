@@ -12,6 +12,9 @@ pydantic = "^1.10.9"
 pyyaml = "^6.0"
 scikit-learn = "^1.2.2"
 matplotlib = "^3.7.1"
+scikit-learn-extra = "^0.3.0"
+prettytable = "^3.8.0"
+kneed = "^0.8.3"
 
 
 [build-system]

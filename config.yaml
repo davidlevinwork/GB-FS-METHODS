@@ -4,7 +4,7 @@ visualization_plots:
   tsne_plot_enabled: true
   silhouette_plot_enabled: true
   cluster_plot_enabled: true
-  clustering_based_jm_enabled: true
+  jm_cluster_plot_enabled: true
   accuracy_to_silhouette_enabled: true
 
 data:
@@ -19,6 +19,3 @@ cross_validation:
 tsne_algorithm:
   iterations: 1000
   perplexity_value: 15
-
-k_medoids_clustering:
-  algorithm_method: pam
