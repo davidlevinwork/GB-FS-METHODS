@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-from lib.apps.io_services.log_service import log_service
+from ..services.log_service import log_service
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
@@ -12,7 +12,7 @@ cmap = plt.get_cmap('nipy_spectral')
 
 def save_plot(plot: plt, folder_name: str, file_name: str, fold_index: int):
     try:
-        full_path = os.path.join(os.path.dirname(__file__), '../../', 'Outputs',
+        full_path = os.path.join(os.path.dirname(__file__), '../', 'Outputs',
                                  f'{time_stamp}', f'Fold #{fold_index}', f'{folder_name}')
 
         if not os.path.isdir(full_path):

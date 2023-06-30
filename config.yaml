@@ -8,7 +8,7 @@ visualization_plots:
   accuracy_to_silhouette_enabled: true
 
 data:
-  path: ./lib/common/datasets/cardiotocography.csv
+  path: ./app/datasets/cardiotocography.csv
   split_ratio: 75-25
   label_column_name: class
 

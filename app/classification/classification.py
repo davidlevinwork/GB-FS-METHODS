@@ -10,9 +10,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
-from ...common.models.models import GraphObject
-from lib.common.models.models import DataCollection
-from lib.apps.io_services.log_service import log_service
+from ..services.log_service import log_service
+from ..models import GraphObject, DataCollection
 
 NUMBER_OF_TEST_EPOCHS = 1
 NUMBER_OF_TRAIN_EPOCHS = 1

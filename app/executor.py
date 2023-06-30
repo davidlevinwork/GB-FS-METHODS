@@ -2,14 +2,13 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
 
-from lib.apps.io_services.log_service import log_service
-from .apps.clustering.clustering import ClusteringService
-from .apps.data_graphing.graph_builder import GraphBuilder
-from .apps.data_graphing.data_processor import DataProcessor
-from lib.common.models.models import DataObject, DataProps
-from .apps.classification.classification import ClassificationService
-
-from .config.config import config
+from .config import config
+from .models import DataObject, DataProps
+from .services.log_service import log_service
+from .clustering.clustering import ClusteringService
+from .data_graphing.graph_builder import GraphBuilder
+from .data_graphing.data_processor import DataProcessor
+from .classification.classification import ClassificationService
 
 
 class Executor:

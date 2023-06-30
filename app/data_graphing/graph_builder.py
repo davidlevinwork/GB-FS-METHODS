@@ -3,11 +3,11 @@ import math
 import numpy as np
 from sklearn.manifold import TSNE
 
-from lib.config.config import config
-from lib.common.helpers import get_distance
-from lib.apps.io_services.plot_service import plot_tsne
-from lib.apps.io_services.log_service import log_service
-from lib.common.models.models import (
+from ..config import config
+from .distance import get_distance
+from ..services.plot_service import plot_tsne
+from ..services.log_service import log_service
+from ..models import (
     DataProps,
     GraphObject,
     DataCollection

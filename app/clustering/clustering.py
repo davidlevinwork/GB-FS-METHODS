@@ -4,11 +4,11 @@ import numpy as np
 import concurrent.futures
 from sklearn_extra.cluster import KMedoids
 
-from ...config.config import config
+from ..config import config
 from .silhouette import get_silhouette_value
-from lib.apps.io_services.log_service import log_service
-from ...common.models.models import DataObject, GraphObject
-from ..io_services.plot_service import plot_silhouette, plot_clustering, plot_jm_clustering
+from ..services.log_service import log_service
+from ..models import DataObject, GraphObject
+from ..services.plot_service import plot_silhouette, plot_clustering, plot_jm_clustering
 
 
 class ClusteringService:
