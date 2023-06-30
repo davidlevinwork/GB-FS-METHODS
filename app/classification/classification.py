@@ -1,5 +1,6 @@
 import os
 import time
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn import tree
@@ -13,6 +14,8 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 from ..services.log_service import log_service
 from ..models import GraphObject, DataCollection
 from ..services.table_service import create_table
+
+warnings.filterwarnings('ignore')
 
 NUMBER_OF_TEST_EPOCHS = 1
 NUMBER_OF_TRAIN_EPOCHS = 1
@@ -49,10 +52,9 @@ class ClassificationService:
                                                               feature_names=feature_names,
                                                               clustering_results=clustering_res)
             results = {
-                "train": train_results,
-                'validation': val_results
+                "Train": train_results,
+                'Validation': val_results
             }
-            create_table(mode=stage, fold_index=fold_index, classification_res=results)
         else:
             test_results = self._get_classification_evaluation(mode='Test',
                                                                graph=graph,
@@ -61,12 +63,14 @@ class ClassificationService:
                                                                feature_names=feature_names,
                                                                clustering_results=clustering_res)
             results = {
-                "train": test_results,
+                "Train": test_results,
             }
+        create_table(mode=stage,
+                     fold_index=fold_index,
+                     classification_res=results)
 
         end_time = time.time()
         log_service.log(f'[Classification Service] : Total run time (sec): [{round(end_time - start_time, 3)}]')
-
         return results
 
     def _get_classification_evaluation(self, data: DataCollection, graph: GraphObject, feature_names: list, mode: str,
@@ -83,7 +87,7 @@ class ClassificationService:
                 k_clustering = [x for x in clustering_results if x['k'] == k][0]
                 results.append(self._execute_classification(data, graph, k_clustering, k, feature_names, mode))
 
-        results = self._sort_results(results=results)
+        results = self.sort_results(results=results)
         return results
 
     def _execute_classification(self, data: DataCollection, graph: GraphObject, clustering_results: dict, k: int,
@@ -146,7 +150,7 @@ class ClassificationService:
             'AUC-ovr': classifier_to_auc_ovr
         }
 
-    def _sort_results(self, results: list) -> dict:
+    def sort_results(self, results: list) -> dict:
         arranged_results = {
             'Results By k': sorted(results, key=lambda x: x['k']),
             'Results By Classifiers': self._arrange_results_by_classifier(results),

@@ -1,16 +1,16 @@
-import numpy as np
-import pandas as pd
 from sklearn.model_selection import KFold
 
 from .config import config
 from .utils import compile_train_results
 from .models import DataObject, DataProps
 from .services.log_service import log_service
-from .clustering.clustering import ClusteringService
+from .services.table_service import create_table
 from .data_graphing.knee_locator import get_knee
+from .clustering.clustering import ClusteringService
 from .data_graphing.graph_builder import GraphBuilder
 from .data_graphing.data_processor import DataProcessor
 from .services.plot_service import plot_accuracy_to_silhouette
+from .classification.benchmarking import select_k_best_features
 from .classification.classification import ClassificationService
 
 
@@ -29,6 +29,12 @@ class Executor:
         # STAGE 2 --> Test stage
         final_features = self._run_test(data=data, knee_results=knee_results)
 
+        if config.operation_mode == 'full':
+            # Stage 3 --> Evaluate test stage (selected features)
+            self._run_test_evaluation(data=data, features=final_features)
+            # Stage 4 --> Benchmark evaluation
+            self._run_benchmark_evaluation(data=data, k=len(final_features))
+
     def _run_train(self, data: DataObject) -> dict:
         log_service.log(f'[Executor] : ******************** Train Stage ********************')
         results = self._get_train_evaluation(data=data)
@@ -41,12 +47,22 @@ class Executor:
 
         return knee_results
 
+    def _run_test(self, data: DataObject, knee_results: dict) -> list:
+        log_service.log(f'[Executor] : ******************** Test Stage ********************')
+
+        results = self._run_model(stage="Test",
+                                  fold_index=0,
+                                  data_props=data.data_props,
+                                  data={'train': data.train_data},
+                                  k_range=[knee_results['knee']])
+        return results['clustering'][0]['kmedoids']['features']
+
     def _get_train_evaluation(self, data: DataObject):
         clustering_results = {}
         classification_results = {}
 
         for i, (train_index, val_index) in enumerate(self.k_fold.split(data.train_data.x_y)):
-            log_service.log(f'[Executor] : ******************** Fold Number #{i+1} ********************')
+            log_service.log(f'[Executor] : ******************** Fold Number #{i + 1} ********************')
 
             train, validation = DataProcessor.get_fold_split(data=data,
                                                              val_index=val_index,
@@ -56,7 +72,7 @@ class Executor:
                 'validation': validation
             }
             results = self._run_model(stage="Train",
-                                      fold_index=i+1,
+                                      fold_index=i + 1,
                                       data=split_data,
                                       data_props=data.data_props,
                                       k_range=[*range(2, len(data.data_props.features), 1)])
@@ -97,12 +113,41 @@ class Executor:
         return {'clustering': clustering_results,
                 'classification': classification_results}
 
-    def _run_test(self, data: DataObject, knee_results: dict) -> list:
-        log_service.log(f'[Executor] : ******************** Test Stage ********************')
+    def _run_test_evaluation(self, data: DataObject, features: list):
+        log_service.log(f'[Executor] : ********************* Test Evaluation *********************')
 
-        results = self._run_model(stage="Test",
-                                  fold_index=0,
-                                  data_props=data.data_props,
-                                  data={'train': data.train_data},
-                                  k_range=[knee_results['knee']])
-        return results['clustering'][0]['kmedoids']['features']
+        # Execute classification service (evaluation only)
+        new_X = data.test_data.x.iloc[:, features]
+        classification_res = self.classification_service.evaluate(X=new_X,
+                                                                  y=data.test_data.y,
+                                                                  mode="Test",
+                                                                  k=len(features))
+        final_results = self.classification_service.sort_results([classification_res])
+        create_table(mode="Test",
+                     fold_index=0,
+                     classification_res={"Test": final_results})
+
+    def _run_benchmark_evaluation(self, data: DataObject, k: int):
+        log_service.log(f'[Executor] : ********************* Benchmark Evaluations *********************')
+
+        classifications_res = []
+        algorithms = ["Relief", "Fisher", "CFS", "MRMR", "Random"]
+        for algo in algorithms:
+            log_service.log('Info', f'[Executor] : Executing benchmark with [{algo}] on [{k}].')
+            new_X = select_k_best_features(k=k,
+                                           algorithm=algo,
+                                           X=data.test_data.x,
+                                           y=data.test_data.y)
+            classification_res = self.classification_service.evaluate(k=k,
+                                                                      X=new_X,
+                                                                      y=data.test_data.y,
+                                                                      mode="Test")
+            classifications_res.append(classification_res)
+
+        final_results = self.classification_service.sort_results(classifications_res)
+
+        # Create results table
+        create_table(fold_index=0,
+                     mode="Benchmarks",
+                     algorithms=algorithms,
+                     classification_res={"Test": final_results})

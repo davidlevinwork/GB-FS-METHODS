@@ -12,9 +12,12 @@ cmap = plt.get_cmap('nipy_spectral')
 
 def save_plot(plot: plt, stage: str, folder_name: str, file_name: str, fold_index: int):
     try:
-        full_path = os.path.join(os.path.dirname(__file__), '../', 'Outputs',
-                                 f'{time_stamp}', f'{stage}', f'Fold #{fold_index}', f'{folder_name}')
-
+        if stage == 'Train':
+            full_path = os.path.join(os.path.dirname(__file__), '../', 'Outputs',
+                                     f'{time_stamp}', f'{stage}', f'Fold #{fold_index}', f'{folder_name}')
+        else:
+            full_path = os.path.join(os.path.dirname(__file__), '../', 'Outputs',
+                                     f'{time_stamp}', f'{stage}', f'{folder_name}')
         if not os.path.isdir(full_path):
             os.makedirs(full_path)
 

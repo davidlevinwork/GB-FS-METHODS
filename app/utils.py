@@ -1,14 +1,5 @@
-import numpy as np
-import pandas as pd
-from random import sample
-from collections import Counter
-from skfeature.function.statistical_based.CFS import cfs
-from skfeature.function.similarity_based.reliefF import reliefF
-from skfeature.function.information_theoretical_based.MRMR import mrmr
-from skfeature.function.similarity_based.fisher_score import fisher_score
-
 from .config import config
-from .services.log_service import log_service
+from collections import Counter
 
 
 ##################################################
@@ -29,12 +20,12 @@ def compile_train_results(classification_results: dict, clustering_results: dict
 
 def compile_train_classification_results(results: dict) -> dict:
     # Init with the results of the first fold
-    combined_results = results[0]['validation']['Results By Classifiers']
+    combined_results = results[0]['Validation']['Results By Classifiers']
 
     # Sum
     num_of_folds = config.cross_validation.num_splits
     for i in range(1, num_of_folds):
-        classifiers = results[i]['validation']['Results By Classifiers']
+        classifiers = results[i]['Validation']['Results By Classifiers']
         for classifier, classifier_results in classifiers.items():
             combined_results[classifier] = dict(Counter(combined_results[classifier]) + Counter(classifier_results))
 
