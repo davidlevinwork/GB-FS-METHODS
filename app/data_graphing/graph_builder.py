@@ -20,12 +20,12 @@ class GraphBuilder:
         self.data_props = data_props
         self.fold_index = fold_index
 
-    def run(self) -> GraphObject:
+    def run(self, stage: str) -> GraphObject:
         matrix = self._calculate_separation_matrix()
         reduced_matrix = self._dimensionality_reduction(data=matrix)
 
         if config.visualization_plots.tsne_plot_enabled:
-            plot_tsne(data=reduced_matrix, fold_index=self.fold_index)
+            plot_tsne(data=reduced_matrix, stage=stage, fold_index=self.fold_index)
 
         return GraphObject(
             matrix=matrix,

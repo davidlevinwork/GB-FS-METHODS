@@ -15,7 +15,7 @@ class ClusteringService:
     def __init__(self, max_workers: int = None):
         self.max_workers = max_workers or min(32, os.cpu_count() + 4)
 
-    def run(self, data: DataObject, graph: GraphObject, k_range: list, fold_index: int) -> list:
+    def run(self, data: DataObject, graph: GraphObject, k_range: list, stage: str, fold_index: int) -> list:
         start_time = time.time()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
@@ -25,11 +25,11 @@ class ClusteringService:
         results = self._log_results(results=results)
 
         if config.visualization_plots.silhouette_plot_enabled:
-            plot_silhouette(clustering_results=results, fold_index=fold_index)
+            plot_silhouette(clustering_results=results, stage=stage, fold_index=fold_index)
         if config.visualization_plots.cluster_plot_enabled:
-            plot_clustering(data=graph.reduced_matrix, clustering_results=results, fold_index=fold_index)
+            plot_clustering(data=graph.reduced_matrix, clustering_results=results, stage=stage, fold_index=fold_index)
         if config.visualization_plots.jm_cluster_plot_enabled:
-            plot_jm_clustering(data=graph.reduced_matrix, clustering_results=results, fold_index=fold_index)
+            plot_jm_clustering(data=graph.reduced_matrix, clustering_results=results, stage=stage, fold_index=fold_index)
 
         end_time = time.time()
         log_service.log(f'[Clustering Service] : Total run time (sec): [{round(end_time - start_time, 3)}]')

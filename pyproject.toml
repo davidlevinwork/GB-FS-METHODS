@@ -15,6 +15,7 @@ matplotlib = "^3.7.1"
 scikit-learn-extra = "^0.3.0"
 prettytable = "^3.8.0"
 kneed = "^0.8.3"
+skfeature-chappers = "^1.1.0"
 
 
 [build-system]

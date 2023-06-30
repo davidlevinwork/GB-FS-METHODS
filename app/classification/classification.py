@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
 from ..services.log_service import log_service
 from ..models import GraphObject, DataCollection
+from ..services.table_service import create_table
 
 NUMBER_OF_TEST_EPOCHS = 1
 NUMBER_OF_TRAIN_EPOCHS = 1
@@ -27,11 +28,14 @@ class ClassificationService:
         self.cv = KFold(n_splits=10, shuffle=True)
         self.max_workers = max_workers or min(32, os.cpu_count() + 4)
 
-    def run(self, mode: str, data: dict, graph: GraphObject, clustering_res: list, feature_names: list, k_range: list):
-        if mode not in ['Train', 'Test']:
+    def run(self, stage: str, data: dict, graph: GraphObject, clustering_res: list, feature_names: list, k_range: list,
+            fold_index: int) -> dict:
+        if stage not in ['Train', 'Test']:
             raise ValueError("Invalid mode. Allowed values are 'Train' and 'Full Train'.")
 
-        if mode == 'Train':
+        start_time = time.time()
+
+        if stage == 'Train':
             train_results = self._get_classification_evaluation(mode='Train',
                                                                 graph=graph,
                                                                 k_range=k_range,
@@ -44,25 +48,42 @@ class ClassificationService:
                                                               data=data['validation'],
                                                               feature_names=feature_names,
                                                               clustering_results=clustering_res)
-            return {
+            results = {
                 "train": train_results,
                 'validation': val_results
             }
-
-    def _get_classification_evaluation(self, data: DataCollection, graph: GraphObject, feature_names: list, mode: str,
-                                       clustering_results: list, k_range: list):
-        start_time = time.time()
-
-        results = []
-        if mode == 'Train' or 'Validation':
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                tasks = [executor.submit(self._execute_classification, data, graph,
-                                         clustering_results[k - 2], k, feature_names, mode) for k in k_range]
-                results = [task.result() for task in concurrent.futures.as_completed(tasks)]
+            create_table(mode=stage, fold_index=fold_index, classification_res=results)
+        else:
+            test_results = self._get_classification_evaluation(mode='Test',
+                                                               graph=graph,
+                                                               k_range=k_range,
+                                                               data=data['train'],
+                                                               feature_names=feature_names,
+                                                               clustering_results=clustering_res)
+            results = {
+                "train": test_results,
+            }
 
         end_time = time.time()
         log_service.log(f'[Classification Service] : Total run time (sec): [{round(end_time - start_time, 3)}]')
 
+        return results
+
+    def _get_classification_evaluation(self, data: DataCollection, graph: GraphObject, feature_names: list, mode: str,
+                                       clustering_results: list, k_range: list) -> dict:
+        results = []
+        if mode in ['Train', 'Validation']:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                tasks = [executor.submit(self._execute_classification, data, graph,
+                                         clustering_results[k - 2], k, feature_names, mode) for k in k_range]
+                results = [task.result() for task in concurrent.futures.as_completed(tasks)]
+        else:
+            # The serial process is more effective due to the smaller k_range
+            for k in k_range:
+                k_clustering = [x for x in clustering_results if x['k'] == k][0]
+                results.append(self._execute_classification(data, graph, k_clustering, k, feature_names, mode))
+
+        results = self._sort_results(results=results)
         return results
 
     def _execute_classification(self, data: DataCollection, graph: GraphObject, clustering_results: dict, k: int,
@@ -72,7 +93,6 @@ class ClassificationService:
                                    reduced_matrix=graph.reduced_matrix,
                                    centroids=clustering_results['kmedoids']['centroids'])
         evaluation = self.evaluate(new_X, data.y, k, mode)
-
         return evaluation
 
     @staticmethod
@@ -91,7 +111,7 @@ class ClassificationService:
         classifier_to_auc_ovr = {}
 
         lb = LabelBinarizer()
-        y_binary = lb.fit_transform(y)                                           # Convert true labels to binary format
+        y_binary = lb.fit_transform(y)  # Convert true labels to binary format
         for classifier in self.classifiers:
             accuracy_list, f1_list, auc_ovo_list, auc_ovr_list = [], [], [], []
             classifier_str = str(classifier).replace('(', '').replace(')', '')
@@ -117,7 +137,7 @@ class ClassificationService:
             classifier_to_auc_ovr[classifier_str] = np.mean(auc_ovr_list)
 
         return {
-            'K': k,
+            'k': k,
             'Mode': mode,
             'Classifiers': classifier_strings,
             'F1': classifier_to_f1,
@@ -125,3 +145,34 @@ class ClassificationService:
             'Accuracy': classifier_to_accuracy,
             'AUC-ovr': classifier_to_auc_ovr
         }
+
+    def _sort_results(self, results: list) -> dict:
+        arranged_results = {
+            'Results By k': sorted(results, key=lambda x: x['k']),
+            'Results By Classifiers': self._arrange_results_by_classifier(results),
+            'Results By F1': sorted(results, key=lambda x: sum(x['F1'].values()) / len(x['F1']), reverse=True),
+            'Results By AUC-ovo': sorted(results, key=lambda x: sum(x['AUC-ovo'].values()) / len(x['AUC-ovo']),
+                                         reverse=True),
+            'Results By AUC-ovr': sorted(results, key=lambda x: sum(x['AUC-ovr'].values()) / len(x['AUC-ovr']),
+                                         reverse=True),
+            'Results By Accuracy': sorted(results, key=lambda x: sum(x['Accuracy'].values()) / len(x['Accuracy']),
+                                          reverse=True)
+        }
+        return arranged_results
+
+    @staticmethod
+    def _arrange_results_by_classifier(results: list) -> dict:
+        arranged_results = {}
+        classifiers = list(results[0]['Classifiers'])
+
+        for classifier in classifiers:
+            classifier_results = {}
+            for result in results:
+                K = result['k']
+                classification_results = result['Accuracy']
+                for c, res in classification_results.items():
+                    if c == classifier:
+                        classifier_results[K] = res
+            arranged_results[classifier] = dict(sorted(classifier_results.items(), key=lambda item: item[0]))
+
+        return arranged_results

@@ -787,6 +787,25 @@ files = [
 ]
 
 [[package]]
+name = "skfeature-chappers"
+version = "1.1.0"
+description = "Unofficial Fork of Feature Selection Repository in Python (DMML Lab@ASU)"
+optional = false
+python-versions = "*"
+files = [
+    {file = "skfeature-chappers-1.1.0.tar.gz", hash = "sha256:026ca9a23443680d38243773a18457c555e17c2cf832c642ffce0f4c46177956"},
+    {file = "skfeature_chappers-1.1.0-py3-none-any.whl", hash = "sha256:875c8a24d79a5e855f86e4e715d6408984356473c9ab0a97c428d68fa978a577"},
+]
+
+[package.dependencies]
+numpy = "*"
+pandas = "*"
+scikit-learn = "*"
+
+[package.extras]
+ci = ["black", "flake8", "isort", "mkdocs", "mkdocs-material", "mkdocstrings", "pytest", "pytest-cov", "pytkdocs[numpy-style]"]
+
+[[package]]
 name = "threadpoolctl"
 version = "3.1.0"
 description = "threadpoolctl"
@@ -837,4 +856,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "3010298746d38b717ac0910768bdd2b9484cd0a693cce64eb8689dffcdc43aa8"
+content-hash = "54cff358c41798b48ed53fdfeadb61a6a6acc8e99ba9bdbe6c772d474861425a"
