@@ -47,7 +47,7 @@ def create_table(fold_index: int, mode: str, classification_res: dict, algorithm
 
 def save_table(table: PrettyTable, metric: str, fold_index: int, mode: str):
     try:
-        output_dir = os.path.join(os.path.dirname(__file__), '..', 'Outputs')
+        output_dir = os.path.join(os.path.dirname(__file__), '..', 'outputs')
         latest_output_dir = max(glob.glob(os.path.join(output_dir, '*/')), key=os.path.getmtime).rsplit('\\', 1)[0]
 
         if mode == "Train":
