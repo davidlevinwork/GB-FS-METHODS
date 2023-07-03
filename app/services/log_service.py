@@ -31,5 +31,5 @@ class LogService:
 
 
 # Create a global log_service instance
-log_file_name = os.path.join(os.getcwd(), "app", "Outputs", "Log.txt")
+log_file_name = os.path.join(os.getcwd(), "app", "outputs", "Log.txt")
 log_service = LogService()
