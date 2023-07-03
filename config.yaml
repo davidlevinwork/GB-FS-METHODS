@@ -2,9 +2,10 @@ operation_mode: full
 
 visualization_plots:
   tsne_plot_enabled: true
-  silhouette_plot_enabled: true
   cluster_plot_enabled: true
+  silhouette_plot_enabled: true
   jm_cluster_plot_enabled: true
+  cost_to_silhouette_enabled: true
   accuracy_to_silhouette_enabled: true
 
 data:
@@ -19,3 +20,6 @@ cross_validation:
 tsne_algorithm:
   iterations: 1000
   perplexity_value: 15
+
+constraint_satisfaction:
+  budget: 5
