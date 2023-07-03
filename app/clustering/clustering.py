@@ -5,26 +5,28 @@ import concurrent.futures
 from sklearn_extra.cluster import KMedoids
 
 from ..config import config
+from ..models import GraphObject, DataProps
 from .silhouette import get_silhouette_value
 from ..services.log_service import log_service
-from ..models import DataObject, GraphObject
+from .constraint_clustering import ConstraintClusteringService
 from ..services.plot_service import plot_silhouette, plot_clustering, plot_jm_clustering
 
 
 class ClusteringService:
     def __init__(self, max_workers: int = None):
+        self.constraint_service = ConstraintClusteringService()
         self.max_workers = max_workers or min(32, os.cpu_count() + 4)
 
-    def run(self, data: DataObject, graph: GraphObject, k_range: list, stage: str, fold_index: int) -> list:
+    def run(self, data_props: DataProps, graph: GraphObject, k_range: list, stage: str, fold_index: int) -> list:
         start_time = time.time()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            tasks = [executor.submit(self._run_cluster_evaluation, graph, k) for k in k_range]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            tasks = [executor.submit(self._run_cluster_evaluation, data_props, graph, k) for k in k_range]
             results = [task.result() for task in concurrent.futures.as_completed(tasks)]
 
         results = self._log_results(results=results)
 
-        if config.visualization_plots.silhouette_plot_enabled:
+        if config.visualization_plots.silhouette_plot_enabled and stage == "Train":
             plot_silhouette(clustering_results=results, stage=stage, fold_index=fold_index)
         if config.visualization_plots.cluster_plot_enabled:
             plot_clustering(data=graph.reduced_matrix, clustering_results=results, stage=stage, fold_index=fold_index)
@@ -36,13 +38,21 @@ class ClusteringService:
 
         return results
 
-    def _run_cluster_evaluation(self, graph: GraphObject, k: int) -> dict:
+    def _run_cluster_evaluation(self, data_props: DataProps, graph: GraphObject, k: int) -> dict:
         kmedoids = self._run_kmedoids(data=graph.reduced_matrix, k=k)
         silhouette = self._get_silhouette_value(data=graph.reduced_matrix,
                                                 labels=kmedoids['labels'],
                                                 centroids=kmedoids['centroids'])
+
+        # Add a special condition based on configuration for this high complexity calculation
+        silhouette, costs = self.constraint_service.run(k=k,
+                                                        graph=graph,
+                                                        kmedoids=kmedoids,
+                                                        data_props=data_props,
+                                                        silhouette=silhouette)
         return {
             'k': k,
+            'costs': costs,
             'kmedoids': kmedoids,
             'silhouette': silhouette
         }
@@ -77,5 +87,8 @@ class ClusteringService:
             k = result['k']
             sil_values = ', '.join(f'({name}) - ({"%.4f" % value})' for name, value in result['silhouette'].items())
             log_service.log(f'[Clustering Service] : Silhouette values for (k={k}) * {sil_values}')
+
+            cost_values = ', '.join(f'({name}) - ({"%.4f" % value})' for name, value in result['costs'].items())
+            log_service.log(f'[Clustering Service] : Costs values for (k={k}) * {cost_values}')
 
         return sorted_results
