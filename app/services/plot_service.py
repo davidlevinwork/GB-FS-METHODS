@@ -3,20 +3,21 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+from ..config import config
 from ..services.log_service import log_service
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
-cmap = plt.get_cmap('nipy_spectral')
+colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'gray', 'black', 'yellow', 'purple', 'orange', 'brown', 'pink']
 
 
 def save_plot(plot: plt, stage: str, folder_name: str, file_name: str, fold_index: int):
     try:
         if stage == 'Train':
-            full_path = os.path.join(os.path.dirname(__file__), '../', 'Outputs',
+            full_path = os.path.join(os.path.dirname(__file__), '../', 'outputs',
                                      f'{time_stamp}', f'{stage}', f'Fold #{fold_index}', f'{folder_name}')
         else:
-            full_path = os.path.join(os.path.dirname(__file__), '../', 'Outputs',
+            full_path = os.path.join(os.path.dirname(__file__), '../', 'outputs',
                                      f'{time_stamp}', f'{stage}', f'{folder_name}')
         if not os.path.isdir(full_path):
             os.makedirs(full_path)
@@ -52,9 +53,10 @@ def plot_silhouette(clustering_results: list, stage: str, fold_index: int):
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        colors = ['red', 'green', 'blue']
-
+        relevant_sil = ['MSS', 'SS', 'Silhouette']
         for sil_type, color in zip(list(clustering_results[0]['silhouette'].keys()), colors):
+            if sil_type not in relevant_sil:
+                continue
             k_values = [res['k'] for res in clustering_results]
             sil_values = [res['silhouette'][sil_type] for res in clustering_results]
             ax.plot(k_values, sil_values, label=sil_type, linestyle='--', c=color)
@@ -163,11 +165,8 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        c_index = 0
-        colors = [cmap(i) for i in np.linspace(0, 1, len(classification_res) + len(clustering_res[0]['silhouette']) +
-                                               len(knee_res))]
-
         # Left Y axis (accuracy)
+        c_index = 0
         for classifier, classifier_val in classification_res.items():
             label = get_classifier_label(str(classifier))
             x_values = [*range(2, len(classification_res[classifier]) + 2, 1)]
@@ -181,7 +180,8 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
         # Right Y axis (silhouette)
         ax2 = ax.twinx()
-        for sil_type in list(clustering_res[0]['silhouette'].keys()):
+        # for sil_type in list(clustering_res[0]['silhouette'].keys()):
+        for sil_type in ['Silhouette', 'SS', 'MSS']:
             k_values = [res['k'] for res in clustering_res]
             sil_values = [res['silhouette'][sil_type] for res in clustering_res]
             ax2.plot(k_values, sil_values, label=sil_type, linestyle="-", c=colors[c_index])
@@ -205,6 +205,59 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
         save_plot(plot=plt, stage=stage, folder_name='Accuracy', file_name='Accuracy-Silhouette', fold_index=0)
     except AssertionError as e:
         log_service.log('Critical', f'[Plot Service] - Failed to plot accuracy to silhouette graph. Error: [{e}]')
+
+
+def plot_costs_to_silhouette(clustering_res: list, knee_res: dict, stage: str = 'Test'):
+    try:
+        plt.clf()
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Left Y axis (costs)
+        c_index = 0
+        for cost_type in list(clustering_res[0]['costs'].keys()):
+            k_values = [int(res['k']) for res in clustering_res]
+            cost_values = [res['costs'][cost_type] for res in clustering_res]
+            ax.plot(k_values, cost_values, label=cost_type, linestyle="-.", c=colors[c_index])
+            c_index += 1
+
+        ax.set_xlabel("k values")
+        ax.set_ylabel("Cost")
+        ax.grid(True, linestyle='-.')
+        ax.spines['top'].set_visible(False)
+
+        # Right Y axis (silhouette)
+        ax2 = ax.twinx()
+        # for sil_type in list(clustering_res[0]['silhouette'].keys()):
+        for sil_type in ['MSS', 'Naive MSS', 'Heuristic MSS']:
+            k_values = [res['k'] for res in clustering_res]
+            sil_values = [res['silhouette'][sil_type] for res in clustering_res]
+            ax2.plot(k_values, sil_values, label=sil_type, linestyle="-", c=colors[c_index])
+            c_index += 1
+
+        # get handles and labels for both axes
+        handles1, labels1 = ax.get_legend_handles_labels()
+        handles2, labels2 = ax2.get_legend_handles_labels()
+        handles = handles1 + handles2
+        labels = labels1 + labels2
+
+        ax.legend(handles, labels, loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2), ncol=4, shadow=True,
+                  fancybox=True)
+
+        # Knee
+        ax2.axvline(x=knee_res['knee'], linestyle=':', c=colors[c_index])
+        ax2.text(knee_res['knee'], 0.1, 'KNEE', rotation=90, color=colors[c_index])
+
+        # Budget
+        c_index += 1
+        ax.axhline(y=config.constraint_satisfaction.budget, linestyle='dotted', c='black')
+        ax.text(0, config.constraint_satisfaction.budget, 'Budget', color='black', fontsize=7)
+
+        ax2.set_ylabel("Silhouette Value")
+        ax2.spines['top'].set_visible(False)
+
+        save_plot(plot=plt, stage=stage, folder_name='Cost', file_name='Cost-Silhouette', fold_index=0)
+    except AssertionError as ex:
+        log_service.log('Error', f'[Visualization Service] - Failed to plot costs graph. Error: [{ex}]')
 
 
 def get_classifier_label(classifier):
