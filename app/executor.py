@@ -9,9 +9,9 @@ from .data_graphing.knee_locator import get_knee
 from .clustering.clustering import ClusteringService
 from .data_graphing.graph_builder import GraphBuilder
 from .data_graphing.data_processor import DataProcessor
-from .services.plot_service import plot_accuracy_to_silhouette
 from .classification.benchmarking import select_k_best_features
 from .classification.classification import ClassificationService
+from .services.plot_service import plot_accuracy_to_silhouette, plot_silhouette, plot_costs_to_silhouette
 
 
 class Executor:
@@ -36,14 +36,21 @@ class Executor:
             self._run_benchmark_evaluation(data=data, k=len(final_features))
 
     def _run_train(self, data: DataObject) -> dict:
-        log_service.log(f'[Executor] : ******************** Train Stage ********************')
         results = self._get_train_evaluation(data=data)
         knee_results = get_knee(results=results)
+
+        plot_silhouette(stage='Test',
+                        fold_index=0,
+                        clustering_results=results['clustering'])
 
         if config.visualization_plots.accuracy_to_silhouette_enabled:
             plot_accuracy_to_silhouette(knee_res=knee_results,
                                         clustering_res=results['clustering'],
                                         classification_res=results['classification'])
+
+        if config.visualization_plots.cost_to_silhouette_enabled:
+            plot_costs_to_silhouette(knee_res=knee_results,
+                                     clustering_res=results['clustering'])
 
         return knee_results
 
@@ -95,7 +102,7 @@ class Executor:
         clustering_results = self.clustering_service.run(stage=stage,
                                                          k_range=k_range,
                                                          graph=graph_data,
-                                                         data=data['train'],
+                                                         data_props=data_props,
                                                          fold_index=fold_index)
         # Ignore classification service in 'basic' mode
         if config.operation_mode == 'basic':
@@ -133,7 +140,6 @@ class Executor:
         classifications_res = []
         algorithms = ["Relief", "Fisher", "CFS", "MRMR", "Random"]
         for algo in algorithms:
-            log_service.log('Info', f'[Executor] : Executing benchmark with [{algo}] on [{k}].')
             new_X = select_k_best_features(k=k,
                                            algorithm=algo,
                                            X=data.test_data.x,
