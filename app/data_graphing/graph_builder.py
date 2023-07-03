@@ -66,5 +66,5 @@ class GraphBuilder:
         low_data = tsne.fit_transform(X=data)
 
         end_time = time.time()
-        log_service.log(f'[Graph Builder] : Total run time (sec)): [{round(end_time - start_time, 3)}]')
+        log_service.log(f'[Graph Builder] : Total run time (sec): [{round(end_time - start_time, 3)}]')
         return low_data

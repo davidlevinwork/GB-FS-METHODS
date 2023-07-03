@@ -44,7 +44,7 @@ def select_k_best_features(X: pd.DataFrame, y: pd.DataFrame, k: int, algorithm: 
         raise ValueError("Invalid algorithm name")
 
     end_time = time.time()
-    log_service.log(f'[Classification Service] - [Benchmarking]: Total run time (sec) for [{algorithm}]:'
+    log_service.log(f'[Classification Service] - [Benchmarking]: Total run time (sec) for {algorithm} method:'
                     f' [{round(end_time - start_time, 3)}]')
 
     return X[selected_features]

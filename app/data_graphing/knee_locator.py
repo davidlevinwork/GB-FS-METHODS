@@ -1,4 +1,5 @@
 from kneed import KneeLocator
+from ..services.log_service import log_service
 
 
 def get_knee(results: dict) -> dict:
@@ -20,4 +21,5 @@ def get_knee(results: dict) -> dict:
         'knees y': kn.all_knees_y
     }
 
+    log_service.log(f'[Knee Locator] : Knee point founded in ({kn_res["knee"]}, {kn_res["knee y"]}).')
     return kn_res
