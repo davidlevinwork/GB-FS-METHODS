@@ -2,7 +2,7 @@ import time
 
 from .IHeuristic import IHeuristic
 from ...models import GraphObject, DataProps
-from ...services.log_service import log_service
+from ...services import log_service
 
 
 class SAHeuristic(IHeuristic):

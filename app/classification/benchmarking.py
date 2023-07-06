@@ -2,7 +2,7 @@ import time
 import pandas as pd
 from random import sample
 
-from ..services.log_service import log_service
+from ..services import log_service
 from skfeature.function.statistical_based.CFS import cfs
 from skfeature.function.similarity_based.reliefF import reliefF
 from skfeature.function.information_theoretical_based.MRMR import mrmr

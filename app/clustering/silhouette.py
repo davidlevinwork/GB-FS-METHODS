@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import silhouette_score
 from sklearn.metrics.pairwise import euclidean_distances
 
-from ..services.log_service import log_service
+from ..services import log_service
 
 
 def get_silhouette_value(X: np.ndarray, labels: np.ndarray, centroids: np.ndarray, type: str):

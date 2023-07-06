@@ -1,5 +1,5 @@
 from kneed import KneeLocator
-from ..services.log_service import log_service
+from ..services import log_service
 
 
 def get_knee(results: dict) -> dict:

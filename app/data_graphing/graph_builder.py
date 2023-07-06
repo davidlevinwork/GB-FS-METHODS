@@ -4,13 +4,14 @@ import numpy as np
 from sklearn.manifold import TSNE
 
 from ..config import config
+from ..services import log_service
 from .distance import get_distance
 from ..services.plot_service import plot_tsne
-from ..services.log_service import log_service
 from ..models import (
     DataProps,
     GraphObject,
-    DataCollection
+    DataCollection,
+    OPERATION_MODE
 )
 
 
@@ -24,7 +25,7 @@ class GraphBuilder:
         matrix = self._calculate_separation_matrix()
         reduced_matrix = self._dimensionality_reduction(data=matrix)
 
-        if config.visualization_plots.tsne_plot_enabled:
+        if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
             plot_tsne(data=reduced_matrix, stage=stage, fold_index=self.fold_index)
 
         return GraphObject(

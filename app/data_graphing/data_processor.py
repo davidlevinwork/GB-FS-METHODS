@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 
 from ..config import config
-from ..services.log_service import log_service
+from ..services import log_service
 from ..models import (
     DataProps,
     DataObject,

@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
 
-from ..services.log_service import log_service
+from ..services import log_service
 from ..models import GraphObject, DataCollection
 from ..services.table_service import create_table
 
@@ -82,7 +82,7 @@ class ClassificationService:
                                          clustering_results[k - 2], k, feature_names, mode) for k in k_range]
                 results = [task.result() for task in concurrent.futures.as_completed(tasks)]
         else:
-            # The serial process is more effective due to the smaller k_range
+            # The serial process is more effective due to the smaller k_range (just the knee value)
             for k in k_range:
                 k_clustering = [x for x in clustering_results if x['k'] == k][0]
                 results.append(self._execute_classification(data, graph, k_clustering, k, feature_names, mode))
@@ -115,7 +115,7 @@ class ClassificationService:
         classifier_to_auc_ovr = {}
 
         lb = LabelBinarizer()
-        y_binary = lb.fit_transform(y)  # Convert true labels to binary format
+        y_binary = lb.fit_transform(y)                                          # Convert true labels to binary format
         for classifier in self.classifiers:
             accuracy_list, f1_list, auc_ovo_list, auc_ovr_list = [], [], [], []
             classifier_str = str(classifier).replace('(', '').replace(')', '')
