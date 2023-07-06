@@ -1,16 +1,16 @@
 from sklearn.model_selection import KFold
 
 from .config import config
+from .services import log_service
 from .utils import compile_train_results
-from .models import DataObject, DataProps
-from .services.log_service import log_service
+from .clustering import ClusteringService
 from .services.table_service import create_table
 from .data_graphing.knee_locator import get_knee
-from .clustering.clustering import ClusteringService
+from .classification import ClassificationService
 from .data_graphing.graph_builder import GraphBuilder
 from .data_graphing.data_processor import DataProcessor
+from .models import DataObject, DataProps, OPERATION_MODE
 from .classification.benchmarking import select_k_best_features
-from .classification.classification import ClassificationService
 from .services.plot_service import plot_accuracy_to_silhouette, plot_silhouette, plot_costs_to_silhouette
 
 
@@ -29,7 +29,7 @@ class Executor:
         # STAGE 2 --> Test stage
         final_features = self._run_test(data=data, knee_results=knee_results)
 
-        if config.operation_mode == 'full':
+        if config.operation_mode == str(OPERATION_MODE.FULL_GBAFS):
             # Stage 3 --> Evaluate test stage (selected features)
             self._run_test_evaluation(data=data, features=final_features)
             # Stage 4 --> Benchmark evaluation
@@ -43,15 +43,10 @@ class Executor:
                         fold_index=0,
                         clustering_results=results['clustering'])
 
-        if config.visualization_plots.accuracy_to_silhouette_enabled:
+        if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
             plot_accuracy_to_silhouette(knee_res=knee_results,
                                         clustering_res=results['clustering'],
                                         classification_res=results['classification'])
-
-        if config.visualization_plots.cost_to_silhouette_enabled:
-            plot_costs_to_silhouette(knee_res=knee_results,
-                                     clustering_res=results['clustering'])
-
         return knee_results
 
     def _run_test(self, data: DataObject, knee_results: dict) -> list:
@@ -85,7 +80,7 @@ class Executor:
                                       k_range=[*range(2, len(data.data_props.features), 1)])
 
             clustering_results[i] = results['clustering']
-            if config.operation_mode == 'full':
+            if config.operation_mode == str(OPERATION_MODE.FULL_GBAFS):
                 classification_results[i] = results['classification']
 
         train_results = compile_train_results(clustering_results=clustering_results,
@@ -105,7 +100,7 @@ class Executor:
                                                          data_props=data_props,
                                                          fold_index=fold_index)
         # Ignore classification service in 'basic' mode
-        if config.operation_mode == 'basic':
+        if config.operation_mode == str(OPERATION_MODE.GBAFS):
             return {'clustering': clustering_results}
 
         # Execute classification service (Evaluation + Tables)

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from enum import Enum
 from typing import Dict
 from dataclasses import dataclass
 
@@ -34,3 +35,13 @@ class DataObject:
 class GraphObject:
     matrix: np.ndarray
     reduced_matrix: np.ndarray
+
+
+class OPERATION_MODE(Enum):
+    GBAFS = 'GBAFS'
+    FULL_GBAFS = 'Full-GBAFS'
+    CS = 'CS'
+    FULL_CS = 'Full-CS'
+
+    def __str__(self):
+        return self.value
