@@ -2,15 +2,6 @@ import yaml
 from pydantic import BaseModel
 
 
-class VisualizationPlotsConfig(BaseModel):
-    tsne_plot_enabled: bool
-    cluster_plot_enabled: bool
-    silhouette_plot_enabled: bool
-    jm_cluster_plot_enabled: bool
-    cost_to_silhouette_enabled: bool
-    accuracy_to_silhouette_enabled: bool
-
-
 class DataConfig(BaseModel):
     path: str
     split_ratio: str
@@ -36,20 +27,10 @@ class Config(BaseModel):
     operation_mode: str
     tsne_algorithm: TSNEAlgorithmConfig
     cross_validation: CrossValidationConfig
-    visualization_plots: VisualizationPlotsConfig
     constraint_satisfaction: ConstraintSatisfaction
 
 
 def load_yaml_config(file_path: str) -> Config:
-    """
-    Load configuration from a YAML file.
-
-    Args:
-        file_path (str): Path to the YAML configuration file.
-
-    Returns:
-        Config: An instance of the Config model with parsed configuration values.
-    """
     with open(file_path, 'r') as file:
         data = yaml.safe_load(file)
 
