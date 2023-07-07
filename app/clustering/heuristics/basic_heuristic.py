@@ -61,8 +61,8 @@ class BasicHeuristic(IHeuristic):
                                        X=graph.reduced_matrix)
             if mss >= heuristic_mss:
                 heuristic_mss = mss
-                heuristic_cost = self._get_features_cost(features=combination,
-                                                         data_props=data_props)
+                heuristic_cost = self.get_features_cost(features=combination,
+                                                        data_props=data_props)
 
         return heuristic_mss, heuristic_cost
 

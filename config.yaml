@@ -1,12 +1,5 @@
-operation_mode: full
-
-visualization_plots:
-  tsne_plot_enabled: true
-  cluster_plot_enabled: true
-  silhouette_plot_enabled: true
-  jm_cluster_plot_enabled: true
-  cost_to_silhouette_enabled: true
-  accuracy_to_silhouette_enabled: true
+# Operations mode = {GBAFS, Full-GBAFS, CS, Full-CS}
+operation_mode: Full-CS
 
 data:
   path: ./app/datasets/cardiotocography.csv

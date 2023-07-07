@@ -4,7 +4,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 from ..config import config
-from ..services.log_service import log_service
+from ..services import log_service
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
@@ -53,9 +53,8 @@ def plot_silhouette(clustering_results: list, stage: str, fold_index: int):
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        relevant_sil = ['MSS', 'SS', 'Silhouette']
         for sil_type, color in zip(list(clustering_results[0]['silhouette'].keys()), colors):
-            if sil_type not in relevant_sil:
+            if sil_type not in ['MSS', 'SS', 'Silhouette']:
                 continue
             k_values = [res['k'] for res in clustering_results]
             sil_values = [res['silhouette'][sil_type] for res in clustering_results]
@@ -98,7 +97,7 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
 
         for clustering_result in clustering_results:
             k = clustering_result['k']
-            centroids = clustering_result['kmedoids']['centroids']
+            centroids = clustering_result['kmedoids']['medoids loc']
             labels = clustering_result['kmedoids']['labels']
             u_labels = np.unique(clustering_result['kmedoids']['labels'])
             for label in u_labels:
@@ -135,7 +134,7 @@ def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, f
             fig, ax = plt.subplots(figsize=(8, 6))
 
             k = clustering_result['k']
-            centroids = clustering_result['kmedoids']['centroids']
+            centroids = clustering_result['kmedoids']['medoids loc']
             plt.scatter(data[:, 0], data[:, 1], c=c, cmap='Wistia')
             plt.scatter(centroids[:, 0], centroids[:, 1], marker='o', color='black', facecolors='none',
                         linewidth=1.25, label="GB-AFS")
@@ -180,34 +179,43 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
         # Right Y axis (silhouette)
         ax2 = ax.twinx()
-        # for sil_type in list(clustering_res[0]['silhouette'].keys()):
-        for sil_type in ['Silhouette', 'SS', 'MSS']:
+        for sil_type in list(clustering_res[0]['silhouette'].keys()):
+            if sil_type in ['Silhouette', 'SS']:
+                continue
             k_values = [res['k'] for res in clustering_res]
             sil_values = [res['silhouette'][sil_type] for res in clustering_res]
             ax2.plot(k_values, sil_values, label=sil_type, linestyle="-", c=colors[c_index])
             c_index += 1
 
-        # get handles and labels for both axes
+        # Get handles and labels for both axes
         handles1, labels1 = ax.get_legend_handles_labels()
         handles2, labels2 = ax2.get_legend_handles_labels()
-        handles = handles1 + handles2
-        labels = labels1 + labels2
-
-        ax.legend(handles, labels, loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2), ncol=4, shadow=True,
-                  fancybox=True)
+        # Creating a separate legend for each axis
+        legend1 = ax.legend(handles1, labels1, title="Classifiers", loc='upper left',
+                            bbox_to_anchor=(0, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
+        ax.add_artist(legend1)
+        legend2 = ax2.legend(handles2, labels2, title="Silhouette Values", loc='upper right',
+                             bbox_to_anchor=(1, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
 
         ax2.axvline(x=knee_res['knee'], linestyle=':', c=colors[c_index])
-        ax2.text(knee_res['knee'], 0.1, 'KNEE', rotation=90, color=colors[c_index])
+        ax2.text(knee_res['knee'], 0.1, f'KNEE\nx={knee_res["knee"]}', rotation=90, color=colors[c_index])
 
         ax2.set_ylabel("Silhouette")
         ax2.spines['top'].set_visible(False)
+
+        # Compute the desired number of x-ticks and the step size
+        n_ticks = 10
+        k_range = max(k_values) - min(k_values)
+        step = max(1, k_range // n_ticks)  # Ensure step is at least 1
+        # Set the x-ticks
+        ax.xaxis.set_ticks(np.arange(min(k_values), max(k_values) + 1, step).astype(int))
 
         save_plot(plot=plt, stage=stage, folder_name='Accuracy', file_name='Accuracy-Silhouette', fold_index=0)
     except AssertionError as e:
         log_service.log('Critical', f'[Plot Service] - Failed to plot accuracy to silhouette graph. Error: [{e}]')
 
 
-def plot_costs_to_silhouette(clustering_res: list, knee_res: dict, stage: str = 'Test'):
+def plot_costs_to_silhouette(clustering_res: list, stage: str, fold_index: int):
     try:
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -227,35 +235,41 @@ def plot_costs_to_silhouette(clustering_res: list, knee_res: dict, stage: str = 
 
         # Right Y axis (silhouette)
         ax2 = ax.twinx()
-        # for sil_type in list(clustering_res[0]['silhouette'].keys()):
-        for sil_type in ['MSS', 'Naive MSS', 'Heuristic MSS']:
+        for sil_type in list(clustering_res[0]['silhouette'].keys()):
+            if sil_type in ['Silhouette', 'SS']:
+                continue
             k_values = [res['k'] for res in clustering_res]
             sil_values = [res['silhouette'][sil_type] for res in clustering_res]
             ax2.plot(k_values, sil_values, label=sil_type, linestyle="-", c=colors[c_index])
             c_index += 1
 
-        # get handles and labels for both axes
+        # Get handles and labels for both axes
         handles1, labels1 = ax.get_legend_handles_labels()
         handles2, labels2 = ax2.get_legend_handles_labels()
-        handles = handles1 + handles2
-        labels = labels1 + labels2
-
-        ax.legend(handles, labels, loc='lower left', bbox_to_anchor=(0, 1.02, 1, 0.2), ncol=4, shadow=True,
-                  fancybox=True)
-
-        # Knee
-        ax2.axvline(x=knee_res['knee'], linestyle=':', c=colors[c_index])
-        ax2.text(knee_res['knee'], 0.1, 'KNEE', rotation=90, color=colors[c_index])
+        # Creating a separate legend for each axis
+        legend1 = ax.legend(handles1, labels1, title="Costs", loc='upper left',
+                            bbox_to_anchor=(0, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
+        ax.add_artist(legend1)
+        legend2 = ax2.legend(handles2, labels2, title="Silhouette Values", loc='upper right',
+                             bbox_to_anchor=(1, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
 
         # Budget
         c_index += 1
-        ax.axhline(y=config.constraint_satisfaction.budget, linestyle='dotted', c='black')
-        ax.text(0, config.constraint_satisfaction.budget, 'Budget', color='black', fontsize=7)
+        budget = config.constraint_satisfaction.budget
+        ax.axhline(y=budget, linestyle='dotted', c='black')
+        ax.text(0, budget, f'Budget (={budget})', color='black')
 
         ax2.set_ylabel("Silhouette Value")
         ax2.spines['top'].set_visible(False)
 
-        save_plot(plot=plt, stage=stage, folder_name='Cost', file_name='Cost-Silhouette', fold_index=0)
+        # Compute the desired number of x-ticks and the step size
+        n_ticks = 10
+        k_range = max(k_values) - min(k_values)
+        step = max(1, k_range // n_ticks)  # Ensure step is at least 1
+        # Set the x-ticks
+        ax.xaxis.set_ticks(np.arange(min(k_values), max(k_values) + 1, step).astype(int))
+
+        save_plot(plot=plt, stage=stage, folder_name='Cost', file_name='Cost-Silhouette', fold_index=fold_index)
     except AssertionError as ex:
         log_service.log('Error', f'[Visualization Service] - Failed to plot costs graph. Error: [{ex}]')
 

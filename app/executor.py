@@ -57,7 +57,7 @@ class Executor:
                                   data_props=data.data_props,
                                   data={'train': data.train_data},
                                   k_range=[knee_results['knee']])
-        return results['clustering'][0]['kmedoids']['features']
+        return results['clustering'][0]['kmedoids']['medoids']
 
     def _get_train_evaluation(self, data: DataObject):
         clustering_results = {}
