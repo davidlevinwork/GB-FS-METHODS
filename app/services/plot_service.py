@@ -192,10 +192,10 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
         handles2, labels2 = ax2.get_legend_handles_labels()
         # Creating a separate legend for each axis
         legend1 = ax.legend(handles1, labels1, title="Classifiers", loc='upper left',
-                            bbox_to_anchor=(0, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
+                            bbox_to_anchor=(0, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
         ax.add_artist(legend1)
         legend2 = ax2.legend(handles2, labels2, title="Silhouette Values", loc='upper right',
-                             bbox_to_anchor=(1, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
+                             bbox_to_anchor=(1, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
 
         ax2.axvline(x=knee_res['knee'], linestyle=':', c=colors[c_index])
         ax2.text(knee_res['knee'], 0.1, f'KNEE\nx={knee_res["knee"]}', rotation=90, color=colors[c_index])
@@ -248,10 +248,10 @@ def plot_costs_to_silhouette(clustering_res: list, stage: str, fold_index: int):
         handles2, labels2 = ax2.get_legend_handles_labels()
         # Creating a separate legend for each axis
         legend1 = ax.legend(handles1, labels1, title="Costs", loc='upper left',
-                            bbox_to_anchor=(0, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
+                            bbox_to_anchor=(0, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
         ax.add_artist(legend1)
         legend2 = ax2.legend(handles2, labels2, title="Silhouette Values", loc='upper right',
-                             bbox_to_anchor=(1, 1.15), ncol=3, shadow=True, fancybox=True, fontsize='xx-small')
+                             bbox_to_anchor=(1, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
 
         # Budget
         c_index += 1

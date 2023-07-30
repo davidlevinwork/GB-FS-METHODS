@@ -11,7 +11,7 @@ from .data_graphing.graph_builder import GraphBuilder
 from .data_graphing.data_processor import DataProcessor
 from .models import DataObject, DataProps, OPERATION_MODE
 from .classification.benchmarking import select_k_best_features
-from .services.plot_service import plot_accuracy_to_silhouette, plot_silhouette, plot_costs_to_silhouette
+from .services.plot_service import plot_accuracy_to_silhouette, plot_silhouette
 
 
 class Executor:
@@ -29,7 +29,7 @@ class Executor:
         # STAGE 2 --> Test stage
         final_features = self._run_test(data=data, knee_results=knee_results)
 
-        if config.operation_mode == str(OPERATION_MODE.FULL_GBAFS):
+        if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
             # Stage 3 --> Evaluate test stage (selected features)
             self._run_test_evaluation(data=data, features=final_features)
             # Stage 4 --> Benchmark evaluation
@@ -80,7 +80,7 @@ class Executor:
                                       k_range=[*range(2, len(data.data_props.features), 1)])
 
             clustering_results[i] = results['clustering']
-            if config.operation_mode == str(OPERATION_MODE.FULL_GBAFS):
+            if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
                 classification_results[i] = results['classification']
 
         train_results = compile_train_results(clustering_results=clustering_results,
@@ -100,7 +100,7 @@ class Executor:
                                                          data_props=data_props,
                                                          fold_index=fold_index)
         # Ignore classification service in 'basic' mode
-        if config.operation_mode == str(OPERATION_MODE.GBAFS):
+        if config.operation_mode in [str(OPERATION_MODE.GBAFS), str(OPERATION_MODE.CS)]:
             return {'clustering': clustering_results}
 
         # Execute classification service (Evaluation + Tables)

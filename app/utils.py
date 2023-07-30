@@ -1,5 +1,6 @@
 from .config import config
 from collections import Counter
+from .models import OPERATION_MODE
 
 
 ##################################################
@@ -12,7 +13,7 @@ def compile_train_results(classification_results: dict, clustering_results: dict
         'classification': {}
     }
 
-    if config.operation_mode == 'full':
+    if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
         compiled_results['classification'] = compile_train_classification_results(results=classification_results)
 
     return compiled_results
