@@ -35,7 +35,7 @@ class DataProcessor:
         )
 
         end_time = time.time()
-        log_service.log(f'[Data Service] : Total run time (sec)): [{round(end_time - start_time, 3)}]')
+        log_service.log(f'[Data Service] : Total run time (sec): [{round(end_time - start_time, 3)}]')
 
         return DataObject(
             raw_data=df,

@@ -19,7 +19,7 @@ class TSNEAlgorithmConfig(BaseModel):
 
 
 class ConstraintSatisfaction(BaseModel):
-    budget: int
+    budget: float
 
 
 class Config(BaseModel):

@@ -48,4 +48,4 @@ def get_silhouette_value(X: np.ndarray, labels: np.ndarray, centroids: np.ndarra
 
         return np.mean(sil_values)
     except Exception as e:
-        log_service.log('Critical', f'[Silhouette] - Failed to calculate Silhouette value. Error: [{e}]')
+        log_service.log(f'[Silhouette] - Failed to calculate Silhouette value. Error: [{e}]', level='Error')
