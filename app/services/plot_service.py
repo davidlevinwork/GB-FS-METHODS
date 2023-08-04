@@ -8,7 +8,8 @@ from ..services import log_service
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
-colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'gray', 'black', 'yellow', 'purple', 'orange', 'brown', 'pink']
+colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'gray', 'black', 'purple', 'orange', 'brown', 'navy', 'maroon',
+          'pink', 'olive', 'turquoise', 'wheat', 'sienna', 'yellow']
 
 
 def save_plot(plot: plt, stage: str, folder_name: str, file_name: str, fold_index: int):
