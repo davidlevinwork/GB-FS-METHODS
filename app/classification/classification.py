@@ -18,7 +18,7 @@ from ..services.table_service import create_table
 warnings.filterwarnings('ignore')
 
 NUMBER_OF_TEST_EPOCHS = 1
-NUMBER_OF_TRAIN_EPOCHS = 1
+NUMBER_OF_TRAIN_EPOCHS = 10
 
 
 class ClassificationService:
