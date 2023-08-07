@@ -37,24 +37,24 @@ class GreedyHeuristic(IHeuristic):
                 kmedoids = self._run_kmedoids(data=graph.reduced_matrix, k=k)
                 continue
 
-            self._set_cluster_details(kmedoids=kmedoids, data_props=data_props)
-            self._run_greedy_iteration(graph=graph, data_props=data_props)
+            self._set_cluster_details(kmedoids=kmedoids, graph=graph, data_props=data_props)
+            self._run_greedy_iteration(k=k, graph=graph, data_props=data_props)
             if self.is_done:
                 break
 
         if self.is_done:
             mss, cost = self._calculate_new_feature_space(graph=graph, data_props=data_props)
         else:
-            mss, cost = 0, 0
+            mss, cost = -1, 0
 
         end_time = time.time()
         log_service.log(f'[Heuristic Clustering] : [Greedy Heuristic ({ALPHA}={self.alpha})] : '
-                        f'Total run time (sec) for [{k}] value: [{round(end_time - start_time, 3)}]'.
-                        encode("utf-8").decode("utf-8"))
-
+                        f'For k=[{k}] => Succeeded: [{self.is_done}] ; Total number of iterations: [{self.counter}] ;'
+                        f'Total run time (sec): [{round(end_time - start_time, 3)}].')
         return mss, cost
 
-    def _set_cluster_details(self, kmedoids: dict, data_props: DataProps):
+    def _set_cluster_details(self, kmedoids: dict, graph: GraphObject, data_props: DataProps):
+        clusters = []
         for medoid, medoid_loc in zip(kmedoids['medoids'], kmedoids['medoids loc']):
             cluster_label = kmedoids['labels'][medoid]
             cluster_features_idx = [idx for idx, feature in enumerate(kmedoids['labels']) if feature == cluster_label]
@@ -63,8 +63,10 @@ class GreedyHeuristic(IHeuristic):
             cluster_total_cost = sum(feature for feature in cluster_features_cost)
             medoid_cost = list(data_props.feature_costs.values())[medoid]
             medoid_name = list(data_props.feature_costs.keys())[medoid]
-
-            self.cluster_details.append({
+            min_dist, max_dist = self._get_cluster_distance(graph=graph,
+                                                            medoid=medoid,
+                                                            features_idx=cluster_features_idx)
+            clusters.append({
                 'cluster_label': cluster_label,
                 'medoid': medoid,
                 'medoid_loc': medoid_loc,
@@ -73,12 +75,30 @@ class GreedyHeuristic(IHeuristic):
                 'cluster_features_idx': cluster_features_idx,
                 'cluster_features_name': cluster_features_name,
                 'cluster_features_cost': cluster_features_cost,
-                'cluster_total_cost': cluster_total_cost
+                'cluster_total_cost': cluster_total_cost,
+                'cluster_distances': {
+                    'max_dist': max_dist,
+                    'min_dist': min_dist
+                }
             })
 
-        self.cluster_details = sorted(self.cluster_details, key=lambda x: x['medoid_cost'], reverse=True)
+        self.cluster_details = sorted(clusters, key=lambda x: x['medoid_cost'], reverse=True)
 
-    def _run_greedy_iteration(self, data_props: DataProps, graph: GraphObject):
+    @staticmethod
+    def _get_cluster_distance(graph: GraphObject, medoid: int, features_idx: list):
+        if len(features_idx) == 1:
+            min_dist = 0
+            max_dist = 0
+        else:
+            min_dist = sorted([distance.euclidean(graph.reduced_matrix[feature_idx], graph.reduced_matrix[medoid])
+                               for feature_idx in features_idx])[1]
+
+            max_dist = max([distance.euclidean(graph.reduced_matrix[feature_idx], graph.reduced_matrix[medoid])
+                            for feature_idx in features_idx])
+
+        return min_dist, max_dist
+
+    def _run_greedy_iteration(self, k: int, data_props: DataProps, graph: GraphObject):
         """
         Function purpose it to run a full greedy iteration, i.e. find a potential clustering results that will satisfy
         the budget constraints.
@@ -89,17 +109,26 @@ class GreedyHeuristic(IHeuristic):
                 self.is_done = True
                 return
 
+            # Clusters of size 1 won't change...
+            if len(cluster['cluster_features_idx']) == 1:
+                continue
+
             next_sum = self._run_forward(idx=idx)
             prev_sum = self._run_backward(idx=idx)
             new_budget = self.budget - next_sum - prev_sum
             new_medoid = self._select_new_medoid(cluster=cluster, new_budget=new_budget, graph=graph)
 
             if new_medoid[0] == float('inf'):
-                print(f"==> ERROR NUMBER 1")
+                log_service.log(f'[Heuristic Clustering] : [Greedy Heuristic ({ALPHA}={self.alpha})] : '
+                                f'The method didnt succeeded to find any medoid for cluster number [{idx}] ; '
+                                f'Original budget: [{self.budget}] ; New budget: [{new_budget}]',
+                                level="Error")
                 continue
 
             if new_medoid[0] != cluster['medoid']:
-                print(f"==> CHANGE")
+                log_service.log(f'[Heuristic Clustering] : [Greedy Heuristic ({ALPHA}={self.alpha})] : '
+                                f'For k=[{k}] clusters, the method found a new medoid for cluster [{idx}] ; '
+                                f'Old medoid: [{cluster["medoid"]}], New medoid: [{new_medoid[0]}].')
                 self._update_new_medoid(cluster_idx=idx, new_medoid=new_medoid, graph=graph, data_props=data_props)
 
     def _calculate_new_feature_space(self, graph: GraphObject, data_props: DataProps):
@@ -146,33 +175,49 @@ class GreedyHeuristic(IHeuristic):
         best_cost = float('inf')
         best_feature_idx = float('inf')
 
+        special_dist = False
+        if len(cluster['cluster_features_idx']) == 2:
+            special_dist = True
+
         relevant_features = [(feat_idx, feat_cost) for feat_idx, feat_cost in
                              zip(cluster['cluster_features_idx'], cluster['cluster_features_cost'])
                              if feat_cost < new_budget]
-        if len(relevant_features) == 0:
-            print(f"==> ERROR NUMBER 2")
 
         for feature in relevant_features:
-            score = self.get_cost(cluster=cluster,
-                                  feature=feature,
-                                  graph=graph)
+            score = self._get_cost(graph=graph,
+                                   cluster=cluster,
+                                   feature=feature,
+                                   special_dist=special_dist)
             if score < best_score:
                 best_score = score
                 best_cost = feature[1]
                 best_feature_idx = feature[0]
+        if best_score == float('inf') or best_cost == float('inf') or best_feature_idx == float('inf'):
+            print("==> ERROR!")
         return best_feature_idx, best_cost
 
-    def get_cost(self, cluster: dict, feature: tuple, graph: GraphObject) -> float:
+    def _get_cost(self, cluster: dict, feature: tuple, graph: GraphObject, special_dist: bool) -> float:
         feature_to_medoid_dist = distance.euclidean(graph.reduced_matrix[feature[0]],
                                                     graph.reduced_matrix[cluster['medoid']])
 
-        # return self.alpha * feature[1] + (1 - self.alpha) * feature_to_medoid_dist
-        return feature[1]
+        if feature[0] == cluster['medoid'] or special_dist:
+            norm_distance = 0
+        else:
+            norm_distance = np.divide(feature_to_medoid_dist - cluster['cluster_distances']['min_dist'],
+                                      cluster['cluster_distances']['max_dist'] - cluster['cluster_distances']['min_dist'])
+
+        norm_cost = np.divide(feature[1] - min(cluster['cluster_features_cost']),
+                              max(cluster['cluster_features_cost']) - min(cluster['cluster_features_cost']))
+
+        if self.alpha * norm_cost + (1 - self.alpha) * norm_distance < 0:
+            print("==> NEGATIVE VALUE")
+
+        return self.alpha * norm_cost + (1 - self.alpha) * norm_distance
 
     @staticmethod
     def _get_minimal_space_cost(labels: list, feature_costs: dict) -> float:
         # Return the minimal cost according to the feature space (take the min feature from each cluster)
-        # (It's different then take the k minimalistic features from the entire space)
+        # (It's different from take the k minimalistic features from the entire space)
         cheapest_features = defaultdict(lambda: (None, float('inf')))
 
         for feature, label in zip(feature_costs.keys(), labels):
