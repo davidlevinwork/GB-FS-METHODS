@@ -2,6 +2,7 @@ import os
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 from ..config import config
 from ..services import log_service
@@ -193,13 +194,25 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
         handles2, labels2 = ax2.get_legend_handles_labels()
         # Creating a separate legend for each axis
         legend1 = ax.legend(handles1, labels1, title="Classifiers", loc='upper left',
-                            bbox_to_anchor=(0, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
+                            bbox_to_anchor=(-0.15, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
         ax.add_artist(legend1)
         legend2 = ax2.legend(handles2, labels2, title="Silhouette Values", loc='upper right',
                              bbox_to_anchor=(1, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
+        ax2.add_artist(legend2)
 
-        ax2.axvline(x=knee_res['knee'], linestyle=':', c=colors[c_index])
-        ax2.text(knee_res['knee'], 0.1, f'KNEE\nx={knee_res["knee"]}', rotation=90, color=colors[c_index])
+        # Knee's
+        knee_labels, knee_handles = [], []
+        for sil_type, knee_value in knee_res.items():
+            if knee_value['knee'] is not None:
+                ax2.axvline(x=knee_value['knee'], linestyle=':', c=colors[c_index])
+                knee_labels.append(sil_type)
+                knee_handles.append(
+                    mlines.Line2D([], [], color=colors[c_index], linestyle=':', label=f'Knee: {sil_type}'))
+                c_index += 1
+
+        knee_legend = ax2.legend(knee_handles, knee_labels, title="Knee Values", loc='upper center',
+                                 bbox_to_anchor=(0.3, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
+        ax2.add_artist(knee_legend)
 
         ax2.set_ylabel("Silhouette")
         ax2.spines['top'].set_visible(False)
