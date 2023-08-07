@@ -5,7 +5,7 @@ from .services import log_service
 from .utils import compile_train_results
 from .clustering import ClusteringService
 from .services.table_service import create_table
-from .data_graphing.knee_locator import get_knee
+from .data_graphing.knee_locator import get_knees
 from .classification import ClassificationService
 from .data_graphing.graph_builder import GraphBuilder
 from .data_graphing.data_processor import DataProcessor
@@ -37,7 +37,7 @@ class Executor:
 
     def _run_train(self, data: DataObject) -> dict:
         results = self._get_train_evaluation(data=data)
-        knee_results = get_knee(results=results)
+        knee_results = get_knees(results=results)
 
         plot_silhouette(stage='Test',
                         fold_index=0,
@@ -56,7 +56,7 @@ class Executor:
                                   fold_index=0,
                                   data_props=data.data_props,
                                   data={'train': data.train_data},
-                                  k_range=[knee_results['knee']])
+                                  k_range=[value['knee'] for key, value in knee_results.items() if "Greedy" in key])
         return results['clustering'][0]['kmedoids']['medoids']
 
     def _get_train_evaluation(self, data: DataObject):
