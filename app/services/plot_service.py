@@ -168,10 +168,13 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
         # Left Y axis (accuracy)
         c_index = 0
+        classifier_labels, classifier_handles = [], []
         for classifier, classifier_val in classification_res.items():
             label = get_classifier_label(str(classifier))
             x_values = [*range(2, len(classification_res[classifier]) + 2, 1)]
-            ax.plot(x_values, classifier_val, linestyle="-.", label=label, c=colors[c_index])
+            ax.plot(x_values, classifier_val, linestyle="--", c=colors[c_index])
+            classifier_labels.append(label)
+            classifier_handles.append(mlines.Line2D([], [], color=colors[c_index], linestyle='--', label=label))
             c_index += 1
 
         ax.set_xlabel("k values")
@@ -181,22 +184,22 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
         # Right Y axis (silhouette)
         ax2 = ax.twinx()
+        sil_labels, sil_handles = [], []
         for sil_type in list(clustering_res[0]['silhouette'].keys()):
             if sil_type in ['Silhouette', 'SS']:
                 continue
             k_values = [res['k'] for res in clustering_res]
             sil_values = [res['silhouette'][sil_type] for res in clustering_res]
-            ax2.plot(k_values, sil_values, label=sil_type, linestyle="-", c=colors[c_index])
+            ax2.plot(k_values, sil_values, linestyle="-", c=colors[c_index])
+            sil_labels.append(sil_type)
+            sil_handles.append(mlines.Line2D([], [], color=colors[c_index], linestyle='-', label=sil_type))
             c_index += 1
 
-        # Get handles and labels for both axes
-        handles1, labels1 = ax.get_legend_handles_labels()
-        handles2, labels2 = ax2.get_legend_handles_labels()
         # Creating a separate legend for each axis
-        legend1 = ax.legend(handles1, labels1, title="Classifiers", loc='upper left',
+        legend1 = ax.legend(classifier_handles, classifier_labels, title="Classifiers", loc='upper left',
                             bbox_to_anchor=(-0.15, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
-        ax.add_artist(legend1)
-        legend2 = ax2.legend(handles2, labels2, title="Silhouette Values", loc='upper right',
+        # ax.add_artist(legend1)
+        legend2 = ax2.legend(sil_handles, sil_labels, title="Silhouette Values", loc='upper right',
                              bbox_to_anchor=(1, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
         ax2.add_artist(legend2)
 
@@ -236,10 +239,13 @@ def plot_costs_to_silhouette(clustering_res: list, stage: str, fold_index: int):
 
         # Left Y axis (costs)
         c_index = 0
+        cost_labels, cost_handles = [], []
         for cost_type in list(clustering_res[0]['costs'].keys()):
             k_values = [int(res['k']) for res in clustering_res]
             cost_values = [res['costs'][cost_type] for res in clustering_res]
-            ax.plot(k_values, cost_values, label=cost_type, linestyle="-.", c=colors[c_index])
+            ax.plot(k_values, cost_values, linestyle="--", c=colors[c_index])
+            cost_labels.append(cost_type)
+            cost_handles.append(mlines.Line2D([], [], color=colors[c_index], linestyle='--', label=cost_type))
             c_index += 1
 
         ax.set_xlabel("k values")
@@ -249,23 +255,22 @@ def plot_costs_to_silhouette(clustering_res: list, stage: str, fold_index: int):
 
         # Right Y axis (silhouette)
         ax2 = ax.twinx()
+        sil_labels, sil_handles = [], []
         for sil_type in list(clustering_res[0]['silhouette'].keys()):
             if sil_type in ['Silhouette', 'SS']:
                 continue
             k_values = [res['k'] for res in clustering_res]
             sil_values = [res['silhouette'][sil_type] for res in clustering_res]
-            ax2.plot(k_values, sil_values, label=sil_type, linestyle="-", c=colors[c_index])
+            ax2.plot(k_values, sil_values, linestyle="-", c=colors[c_index])
+            sil_labels.append(sil_type)
+            sil_handles.append(mlines.Line2D([], [], color=colors[c_index], linestyle='-', label=sil_type))
             c_index += 1
 
-        # Get handles and labels for both axes
-        handles1, labels1 = ax.get_legend_handles_labels()
-        handles2, labels2 = ax2.get_legend_handles_labels()
         # Creating a separate legend for each axis
-        legend1 = ax.legend(handles1, labels1, title="Costs", loc='upper left',
-                            bbox_to_anchor=(0, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
-        ax.add_artist(legend1)
-        legend2 = ax2.legend(handles2, labels2, title="Silhouette Values", loc='upper right',
-                             bbox_to_anchor=(1, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
+        ax.legend(cost_handles, cost_labels, title="Costs", loc='upper left',
+                  bbox_to_anchor=(0, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
+        ax2.legend(sil_handles, sil_labels, title="Silhouette Values", loc='upper right',
+                   bbox_to_anchor=(1, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
 
         # Budget
         c_index += 1
