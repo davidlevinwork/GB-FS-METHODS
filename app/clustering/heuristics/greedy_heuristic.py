@@ -55,7 +55,7 @@ class GreedyHeuristic(IHeuristic):
 
     def _set_cluster_details(self, kmedoids: dict, graph: GraphObject, data_props: DataProps):
         clusters = []
-        for medoid, medoid_loc in zip(kmedoids['medoids'], kmedoids['medoids loc']):
+        for medoid, medoid_loc in zip(kmedoids['medoids'], kmedoids['medoids_loc']):
             cluster_label = kmedoids['labels'][medoid]
             cluster_features_idx = [idx for idx, feature in enumerate(kmedoids['labels']) if feature == cluster_label]
             cluster_features_name = [data_props.features[idx] for idx in cluster_features_idx]

@@ -36,7 +36,7 @@ class ClusteringService:
         kmedoids = self._run_kmedoids(data=graph.reduced_matrix, k=k)
         silhouette = self._get_silhouette_value(data=graph.reduced_matrix,
                                                 labels=kmedoids['labels'],
-                                                centroids=kmedoids['medoids loc'])
+                                                centroids=kmedoids['medoids_loc'])
         result = {
             'k': k,
             'kmedoids': kmedoids,
