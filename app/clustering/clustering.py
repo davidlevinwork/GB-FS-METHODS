@@ -61,7 +61,7 @@ class ClusteringService:
         return {
             'labels': kmedoids.labels_,
             'medoids': kmedoids.medoid_indices_,
-            'medoids loc': kmedoids.cluster_centers_
+            'medoids_loc': kmedoids.cluster_centers_
         }
 
     @staticmethod

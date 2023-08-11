@@ -99,7 +99,7 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
 
         for clustering_result in clustering_results:
             k = clustering_result['k']
-            centroids = clustering_result['kmedoids']['medoids loc']
+            centroids = clustering_result['kmedoids']['medoids_loc']
             labels = clustering_result['kmedoids']['labels']
             u_labels = np.unique(clustering_result['kmedoids']['labels'])
             for label in u_labels:
@@ -234,6 +234,8 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
 def plot_costs_to_silhouette(clustering_res: list, stage: str, fold_index: int):
     try:
+        if stage == 'Test':
+            return
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
