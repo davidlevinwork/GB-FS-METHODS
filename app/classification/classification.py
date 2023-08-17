@@ -95,7 +95,7 @@ class ClassificationService:
         new_X = self._prepare_data(X=data.x,
                                    feature_names=feature_names,
                                    reduced_matrix=graph.reduced_matrix,
-                                   centroids=clustering_results['kmedoids']['medoids_loc'])
+                                   centroids=clustering_results['kmedoids']['medoid_loc'])
         evaluation = self.evaluate(new_X, data.y, k, mode)
         return evaluation
 
