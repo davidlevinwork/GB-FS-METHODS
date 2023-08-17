@@ -44,11 +44,21 @@ class BasicHeuristic(IHeuristic):
                                      <= config.constraint_satisfaction.budget]
 
         new_kmedoids = self._get_new_kmedoids(graph=graph,
-                                              features_combination=relevant_combinations)
+                                              feature_combinations=relevant_combinations)
         mss, cost = self._calculate_baseline_results(graph=graph,
                                                      data_props=data_props,
                                                      kmedoids=new_kmedoids)
         return mss, cost
+
+    @staticmethod
+    def _get_new_kmedoids(graph: GraphObject, feature_combinations: list) -> list:
+        results = []
+        for feature_combination in feature_combinations:
+            centers = graph.reduced_matrix[list(feature_combination)]
+            dist_matrix = distance.cdist(graph.reduced_matrix, centers)
+            labels = np.argmin(dist_matrix, axis=1)
+            results.append((feature_combination, centers, labels))
+        return results
 
     def _calculate_baseline_results(self, data_props: DataProps, graph: GraphObject, kmedoids: list) -> tuple:
         heuristic_mss = 0
@@ -65,22 +75,3 @@ class BasicHeuristic(IHeuristic):
                                                         data_props=data_props)
 
         return heuristic_mss, heuristic_cost
-
-    @staticmethod
-    def _get_new_kmedoids(graph: GraphObject, features_combination: list) -> list:
-        results = []
-
-        for f_combination in features_combination:
-            labels = []
-            # Define the 'new' centers as the combination features
-            centers = [graph.reduced_matrix[center] for center in f_combination]
-
-            for feature in graph.reduced_matrix:
-                # For each feature in the space, find the closest center in the current combination features
-                closest_centroid_idx = np.argmin([distance.euclidean(feature, graph.reduced_matrix[center])
-                                                  for center in f_combination])
-                labels.append(closest_centroid_idx)
-            # Result for each feature combination = (centroids [=current combination], labels for current combination)
-            results.append((f_combination, np.array(centers), np.array(labels)))
-
-        return results
