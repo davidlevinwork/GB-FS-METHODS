@@ -18,7 +18,7 @@ class BasicHeuristic(IHeuristic):
     def __str__(self):
         return 'Basic Naive' if self.is_naive else 'Basic No Naive'
 
-    def run(self, data_props: DataProps, graph: GraphObject, kmedoids: dict, k: int):
+    def run(self, data_props: DataProps, graph: GraphObject, kmedoids: dict, k: int) -> dict:
         start_time = time.time()
 
         mss, cost = self._get_results(k=k,
@@ -28,8 +28,11 @@ class BasicHeuristic(IHeuristic):
         end_time = time.time()
         log_service.log(f'[Heuristic Clustering] : [Basic Heuristic (Naive mode = {self.is_naive})] : '
                         f'Total run time (sec) for [{k}] value: [{round(end_time - start_time, 3)}]')
-
-        return mss, cost
+        return {
+            'mss': mss,
+            'cost': cost,
+            'is_new_features': False
+        }
 
     def _get_results(self, data_props: DataProps, graph: GraphObject, k: int) -> tuple:
         # Create a list of all the possible combinations of k features from the (data) original list of feature

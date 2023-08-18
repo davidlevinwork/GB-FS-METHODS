@@ -16,7 +16,7 @@ class IHeuristic(ABC):
         pass
 
     @abstractmethod
-    def run(self, data_props: DataProps, graph: GraphObject, kmedoids: dict, k: int) -> tuple:
+    def run(self, data_props: DataProps, graph: GraphObject, kmedoids: dict, k: int) -> dict:
         pass
 
     @property

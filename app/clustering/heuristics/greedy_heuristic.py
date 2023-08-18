@@ -13,7 +13,7 @@ ALPHA = r'$\alpha$'
 
 
 class GreedyHeuristic(IHeuristic):
-    def __init__(self, alpha: float, epochs: int = 50):
+    def __init__(self, alpha: float, epochs: int = 1):
         super().__init__()
         self.alpha = alpha
         self.epochs = epochs
@@ -24,7 +24,7 @@ class GreedyHeuristic(IHeuristic):
     def __str__(self):
         return f'Greedy ({ALPHA}={self.alpha})'
 
-    def run(self, data_props: DataProps, graph: GraphObject, kmedoids: dict, k: int) -> tuple:
+    def run(self, data_props: DataProps, graph: GraphObject, kmedoids: dict, k: int) -> dict:
         start_time = time.time()
         self.counter = 0
 
@@ -34,6 +34,8 @@ class GreedyHeuristic(IHeuristic):
             minimal_cost = self._get_minimal_space_cost(labels=kmedoids['labels'],
                                                         feature_costs=data_props.feature_costs)
             if minimal_cost > self.budget:
+                # If the current feature space cannot obtain a 'legal' results in terms of budget -
+                # we generate new run of k-medoids
                 kmedoids = self._run_kmedoids(data=graph.reduced_matrix, k=k)
                 continue
 
@@ -43,19 +45,31 @@ class GreedyHeuristic(IHeuristic):
                 break
 
         if self.is_done:
-            mss, cost = self._calculate_new_feature_space(graph=graph, data_props=data_props)
+            final_results = self._calculate_new_feature_space(graph=graph, data_props=data_props)
+            results = {
+                'is_new_features': True,
+                'mss': final_results['mss'],
+                'cost': final_results['cost'],
+                'new_labels': final_results['new_labels'],
+                'new_medoids': final_results['new_medoids'],
+                'new_medoids_loc': final_results['new_medoids_loc']
+            }
         else:
-            mss, cost = -1, 0
+            results = {
+                'is_new_features': False,
+                'mss': -1,
+                'cost': 0
+            }
 
         end_time = time.time()
         log_service.log(f'[Heuristic Clustering] : [Greedy Heuristic ({ALPHA}={self.alpha})] : '
-                        f'For k=[{k}] => Succeeded: [{self.is_done}] ; Total number of iterations: [{self.counter}] ;'
+                        f'For k=[{k}] => Succeeded: [{self.is_done}] ; Total number of iterations: [{self.counter}] ; '
                         f'Total run time (sec): [{round(end_time - start_time, 3)}].')
-        return mss, cost
+        return results
 
     def _set_cluster_details(self, kmedoids: dict, graph: GraphObject, data_props: DataProps):
         clusters = []
-        for medoid, medoid_loc in zip(kmedoids['medoids'], kmedoids['medoids_loc']):
+        for medoid, medoid_loc in zip(kmedoids['medoids'], kmedoids['medoid_loc']):
             cluster_label = kmedoids['labels'][medoid]
             cluster_features_idx = [idx for idx, feature in enumerate(kmedoids['labels']) if feature == cluster_label]
             cluster_features_name = [data_props.features[idx] for idx in cluster_features_idx]
@@ -98,6 +112,19 @@ class GreedyHeuristic(IHeuristic):
 
         return min_dist, max_dist
 
+    @staticmethod
+    def _get_minimal_space_cost(labels: list, feature_costs: dict) -> float:
+        # Return the minimal cost according to the feature space (take the min feature from each cluster)
+        # (It's different from take the k minimalistic features from the entire space)
+        cheapest_features = defaultdict(lambda: (None, float('inf')))
+
+        for feature, label in zip(feature_costs.keys(), labels):
+            cost = feature_costs[feature]
+            if cost < cheapest_features[label][1]:
+                cheapest_features[label] = (feature, cost)
+
+        return sum(cost for feature, cost in cheapest_features.values())
+
     def _run_greedy_iteration(self, k: int, data_props: DataProps, graph: GraphObject):
         """
         Function purpose it to run a full greedy iteration, i.e. find a potential clustering results that will satisfy
@@ -130,30 +157,6 @@ class GreedyHeuristic(IHeuristic):
                                 f'For k=[{k}] clusters, the method found a new medoid for cluster [{idx}] ; '
                                 f'Old medoid: [{cluster["medoid"]}], New medoid: [{new_medoid[0]}].')
                 self._update_new_medoid(cluster_idx=idx, new_medoid=new_medoid, graph=graph, data_props=data_props)
-
-    def _calculate_new_feature_space(self, graph: GraphObject, data_props: DataProps):
-        medoids, labels = self._get_new_kmedoids(graph=graph)
-        mss = get_silhouette_value(type='mss',
-                                   labels=labels,
-                                   centroids=medoids,
-                                   X=graph.reduced_matrix)
-        cost = self.get_features_cost(data_props=data_props,
-                                      features=np.array([medoid['medoid'] for medoid in self.cluster_details]))
-
-        return mss, cost
-
-    def _get_new_kmedoids(self, graph: GraphObject) -> tuple:
-        medoids_idx = [medoid['medoid'] for medoid in self.cluster_details]
-        medoids = [graph.reduced_matrix[center] for center in medoids_idx]
-        labels = []
-
-        for feature in graph.reduced_matrix:
-            # For each feature in the space, find the closest medoid
-            closest_centroid_idx = np.argmin([distance.euclidean(feature, graph.reduced_matrix[medoid])
-                                              for medoid in medoids_idx])
-            labels.append(closest_centroid_idx)
-
-        return np.array(medoids), np.array(labels)
 
     def _update_new_medoid(self, graph: GraphObject, data_props: DataProps, cluster_idx: int, new_medoid: tuple):
         self.cluster_details[cluster_idx].update({
@@ -193,7 +196,7 @@ class GreedyHeuristic(IHeuristic):
                 best_cost = feature[1]
                 best_feature_idx = feature[0]
         if best_score == float('inf') or best_cost == float('inf') or best_feature_idx == float('inf'):
-            print("==> ERROR!")
+            raise ValueError("Function [_select_new_medoids] didnt succeeded to find new medoid.")
         return best_feature_idx, best_cost
 
     def _get_cost(self, cluster: dict, feature: tuple, graph: GraphObject, special_dist: bool) -> float:
@@ -215,24 +218,41 @@ class GreedyHeuristic(IHeuristic):
         return self.alpha * norm_cost + (1 - self.alpha) * norm_distance
 
     @staticmethod
-    def _get_minimal_space_cost(labels: list, feature_costs: dict) -> float:
-        # Return the minimal cost according to the feature space (take the min feature from each cluster)
-        # (It's different from take the k minimalistic features from the entire space)
-        cheapest_features = defaultdict(lambda: (None, float('inf')))
-
-        for feature, label in zip(feature_costs.keys(), labels):
-            cost = feature_costs[feature]
-            if cost < cheapest_features[label][1]:
-                cheapest_features[label] = (feature, cost)
-
-        return sum(cost for feature, cost in cheapest_features.values())
-
-    @staticmethod
     def _run_kmedoids(data: np.ndarray, k: int) -> dict:
         kmedoids = KMedoids(init='k-medoids++', n_clusters=k, method='pam').fit(data)
 
         return {
             'labels': kmedoids.labels_,
             'medoids': kmedoids.medoid_indices_,
-            'medoids loc': kmedoids.cluster_centers_
+            'medoid_loc': kmedoids.cluster_centers_
         }
+
+    def _calculate_new_feature_space(self, graph: GraphObject, data_props: DataProps) -> dict:
+        labels, medoids, medoids_loc = self._get_new_kmedoids(graph=graph)
+        mss = get_silhouette_value(type='mss',
+                                   labels=labels,
+                                   centroids=medoids_loc,
+                                   X=graph.reduced_matrix)
+        cost = self.get_features_cost(data_props=data_props,
+                                      features=np.array([medoid['medoid'] for medoid in self.cluster_details]))
+
+        return {
+            'mss': mss,
+            'cost': cost,
+            'new_labels': labels,
+            'new_medoids': medoids,
+            'new_medoids_loc': medoids_loc
+        }
+
+    def _get_new_kmedoids(self, graph: GraphObject) -> tuple:
+        medoids_idx = [medoid['medoid'] for medoid in self.cluster_details]
+        medoids = [graph.reduced_matrix[center] for center in medoids_idx]
+        labels = []
+
+        for feature in graph.reduced_matrix:
+            # For each feature in the space, find the closest medoid
+            closest_centroid_idx = np.argmin([distance.euclidean(feature, graph.reduced_matrix[medoid])
+                                              for medoid in medoids_idx])
+            labels.append(closest_centroid_idx)
+
+        return np.array(labels), np.array(medoids_idx), np.array(medoids)
