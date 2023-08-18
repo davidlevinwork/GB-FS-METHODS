@@ -36,7 +36,7 @@ class ClusteringService:
         kmedoids = self._run_kmedoids(data=graph.reduced_matrix, k=k)
         silhouette = self._get_silhouette_value(data=graph.reduced_matrix,
                                                 labels=kmedoids['labels'],
-                                                centroids=kmedoids['medoids_loc'])
+                                                centroids=kmedoids['medoid_loc'])
         result = {
             'k': k,
             'kmedoids': kmedoids,
@@ -44,13 +44,17 @@ class ClusteringService:
         }
 
         if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
-            new_silhouette, cost = self.heuristic_service.run(k=k,
-                                                              graph=graph,
-                                                              kmedoids=kmedoids,
-                                                              data_props=data_props,
-                                                              silhouette=silhouette)
-            result['costs'] = cost
-            result['silhouette'].update(new_silhouette)
+            heuristic_results = self.heuristic_service.run(k=k,
+                                                           graph=graph,
+                                                           kmedoids=kmedoids,
+                                                           data_props=data_props,
+                                                           silhouette=silhouette)
+            result['costs'] = heuristic_results['cost']
+            result['silhouette'].update(heuristic_results['mss'])
+            if heuristic_results['is_new_features']:
+                result['kmedoids']['labels'] = heuristic_results['new_labels']
+                result['kmedoids']['medoids'] = heuristic_results['new_medoids']
+                result['kmedoids']['medoid_loc'] = heuristic_results['new_medoids_loc']
 
         return result
 
@@ -61,7 +65,7 @@ class ClusteringService:
         return {
             'labels': kmedoids.labels_,
             'medoids': kmedoids.medoid_indices_,
-            'medoids_loc': kmedoids.cluster_centers_
+            'medoid_loc': kmedoids.cluster_centers_
         }
 
     @staticmethod
@@ -83,11 +87,13 @@ class ClusteringService:
 
         for result in sorted_results:
             k = result['k']
-            sil_values = ', '.join(f'({name}) - ({"%.4f" % value})' for name, value in result['silhouette'].items())
+            sil_values = ', '.join(f'({name}) - ({("%.4f" % value) if value is not None else "NA"})'
+                                   for name, value in result['silhouette'].items())
             log_service.log(f'[Clustering Service] : Silhouette values for (k={k}) * {sil_values}')
 
             if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
-                cost_values = ', '.join(f'({name}) - ({"%.4f" % value})' for name, value in result['costs'].items())
+                cost_values = ', '.join(f'({name}) - ({("%.4f" % value) if value is not None else "NA"})'
+                                        for name, value in result['costs'].items())
                 log_service.log(f'[Clustering Service] : Costs values for (k={k}) * {cost_values}')
 
         return sorted_results

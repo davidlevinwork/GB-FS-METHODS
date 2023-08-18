@@ -9,8 +9,8 @@ from ..services import log_service
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
-colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'gray', 'black', 'purple', 'orange', 'brown', 'navy', 'maroon',
-          'pink', 'olive', 'turquoise', 'wheat', 'sienna', 'yellow']
+colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'black', 'purple', 'orange', 'brown', 'navy', 'maroon',
+          'pink', 'olive', 'turquoise', 'sienna', 'yellow']
 
 
 def save_plot(plot: plt, stage: str, folder_name: str, file_name: str, fold_index: int):
@@ -58,9 +58,9 @@ def plot_silhouette(clustering_results: list, stage: str, fold_index: int):
         for sil_type, color in zip(list(clustering_results[0]['silhouette'].keys()), colors):
             if sil_type not in ['MSS', 'SS', 'Silhouette']:
                 continue
-            k_values = [res['k'] for res in clustering_results]
-            sil_values = [res['silhouette'][sil_type] for res in clustering_results]
-            ax.plot(k_values, sil_values, label=sil_type, linestyle='--', c=color)
+            sil_values = [res['silhouette'][sil_type] for res in clustering_results if sil_type in res['silhouette']]
+            k_indices = list(range(2, len(sil_values) + 2))
+            ax.plot(k_indices, sil_values, label=sil_type, linestyle='--', c=color)
 
         y_ticks = []
         for i in range(1, 10):
@@ -70,7 +70,7 @@ def plot_silhouette(clustering_results: list, stage: str, fold_index: int):
 
         # Set x and y-axis limits to start from 0
         ax.set_ylim(0, 1)
-        ax.set_xlim(0, max(k_values))
+        ax.set_xlim(0, max([res['k'] for res in clustering_results]))
 
         # Show only the bottom and left ticks
         ax.xaxis.set_ticks_position('bottom')
@@ -99,7 +99,7 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
 
         for clustering_result in clustering_results:
             k = clustering_result['k']
-            centroids = clustering_result['kmedoids']['medoids_loc']
+            centroids = clustering_result['kmedoids']['medoid_loc']
             labels = clustering_result['kmedoids']['labels']
             u_labels = np.unique(clustering_result['kmedoids']['labels'])
             for label in u_labels:
@@ -136,7 +136,7 @@ def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, f
             fig, ax = plt.subplots(figsize=(8, 6))
 
             k = clustering_result['k']
-            centroids = clustering_result['kmedoids']['medoids loc']
+            centroids = clustering_result['kmedoids']['medoid_loc']
             plt.scatter(data[:, 0], data[:, 1], c=c, cmap='Wistia')
             plt.scatter(centroids[:, 0], centroids[:, 1], marker='o', color='black', facecolors='none',
                         linewidth=1.25, label="GB-AFS")
@@ -161,17 +161,20 @@ def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, f
         log_service.log('Critical', f'[Plot Service] - Failed to plot jm-clustering graph. Error: [{e}]')
 
 
-def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, knee_res: dict, stage: str = 'Test'):
+def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
     try:
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
+        ax.axvspan(results['heuristic_idx']['first_idx'], results['heuristic_idx']['last_idx'], color='gray', alpha=0.3)
+        ax.axvspan(results['heuristic_idx']['last_idx'], results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
+
         # Left Y axis (accuracy)
         c_index = 0
         classifier_labels, classifier_handles = [], []
-        for classifier, classifier_val in classification_res.items():
+        for classifier, classifier_val in results['results']['classification'].items():
             label = get_classifier_label(str(classifier))
-            x_values = [*range(2, len(classification_res[classifier]) + 2, 1)]
+            x_values = [*range(2, len(results['results']['classification'][classifier]) + 2, 1)]
             ax.plot(x_values, classifier_val, linestyle="--", c=colors[c_index])
             classifier_labels.append(label)
             classifier_handles.append(mlines.Line2D([], [], color=colors[c_index], linestyle='--', label=label))
@@ -185,12 +188,13 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
         # Right Y axis (silhouette)
         ax2 = ax.twinx()
         sil_labels, sil_handles = [], []
-        for sil_type in list(clustering_res[0]['silhouette'].keys()):
+        for sil_type in list(results['results']['clustering'][0]['silhouette'].keys()):
             if sil_type in ['Silhouette', 'SS']:
                 continue
-            k_values = [res['k'] for res in clustering_res]
-            sil_values = [res['silhouette'][sil_type] for res in clustering_res]
-            ax2.plot(k_values, sil_values, linestyle="-", c=colors[c_index])
+            sil_values = [res['silhouette'][sil_type] for res in results['results']['clustering']
+                          if sil_type in res['silhouette']]
+            k_indices = list(range(2, len(sil_values) + 2))
+            ax2.plot(k_indices, sil_values, linestyle="-", c=colors[c_index])
             sil_labels.append(sil_type)
             sil_handles.append(mlines.Line2D([], [], color=colors[c_index], linestyle='-', label=sil_type))
             c_index += 1
@@ -205,7 +209,7 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
         # Knee's
         knee_labels, knee_handles = [], []
-        for sil_type, knee_value in knee_res.items():
+        for sil_type, knee_value in results['knee_results'].items():
             if knee_value['knee'] is not None:
                 ax2.axvline(x=knee_value['knee'], linestyle=':', c=colors[c_index])
                 knee_labels.append(sil_type)
@@ -222,6 +226,7 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
         # Compute the desired number of x-ticks and the step size
         n_ticks = 10
+        k_values = [int(res['k']) for res in results['results']['clustering']]
         k_range = max(k_values) - min(k_values)
         step = max(1, k_range // n_ticks)  # Ensure step is at least 1
         # Set the x-ticks
@@ -234,7 +239,7 @@ def plot_accuracy_to_silhouette(classification_res: dict, clustering_res: list, 
 
 def plot_costs_to_silhouette(clustering_res: list, stage: str, fold_index: int):
     try:
-        if stage == 'Test':
+        if stage != 'Train':
             return
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
