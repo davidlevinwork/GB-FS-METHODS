@@ -5,22 +5,34 @@ from ..services import log_service
 from ..models import OPERATION_MODE
 
 
-def get_knees(results: dict) -> dict:
+def get_knees(results: dict):
+    # REMOVE
+    # del results['clustering'][0]
+    # del results['clustering'][0]
+    # for key in results['classification']:
+    #    results['classification'][key] = results['classification'][key][2:]
+    # REMOVE
+
     if config.operation_mode in [str(OPERATION_MODE.GBAFS), str(OPERATION_MODE.FULL_GBAFS)]:
         x = [res['k'] for res in results['clustering']]
         y = [res['silhouette']['MSS'] for res in results['clustering']]
 
-        return get_knee(x=x, y=y, function="MSS")
+        return get_knee(x=x, y=y, function="MSS"), results
 
     if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
-        final_results = {}
+        knee_results = {}
+        heuristic_idx = get_heuristic_indexes(results=results)
         for sil_type in results['clustering'][0]['silhouette'].keys():
             if sil_type not in ['Silhouette', 'SS']:
-                x, y = get_x_y_values(results=results, function=sil_type)
-                final_results.update(
+                x, y = get_x_y_values(results=results, function=sil_type, heuristic_idx=heuristic_idx)
+                knee_results.update(
                     get_knee(x=x, y=y, function=sil_type)
                 )
-        return final_results
+        return {
+            'results': results,
+            'knee_results': knee_results,
+            'heuristic_idx': heuristic_idx
+        }
 
 
 def get_knee(x: list, y: list, function: str) -> dict:
@@ -44,33 +56,54 @@ def get_knee(x: list, y: list, function: str) -> dict:
     return {function: results}
 
 
-def get_x_y_values(results: dict, function: str) -> tuple:
-    first_idx, last_idx = set_split_indexes(results=results)
-
-    if function == 'Basic No Naive MSS':
-        x = [res['k'] for res in results['clustering']][:last_idx]
-        y = [x['silhouette'][function] for x in results['clustering']][:last_idx]
+def get_x_y_values(results: dict, function: str, heuristic_idx: dict) -> tuple:
+    if 'Naive' in function:
+        x = [res['k'] for res in results['clustering']][:heuristic_idx['last_idx']]
+        y = [x['silhouette'][function] for x in results['clustering']][:heuristic_idx['last_idx']]
         return x, y
 
     if function == 'MSS':
-        x = [res['k'] for res in results['clustering']][:first_idx]
-        y = [x['silhouette'][function] for x in results['clustering']][:first_idx]
+        # x_range will be until the first idx of the heuristic methods
+        x = [res['k'] for res in results['clustering']][:heuristic_idx['first_idx']]
+        y = [x['silhouette'][function] for x in results['clustering']][:heuristic_idx['first_idx']]
+
+        # x_range will be for the entire k range (like without using heuristics)
+        # x = [res['k'] for res in results['clustering']]
+        # y = [x['silhouette'][function] for x in results['clustering']]
         return x, y
 
     if 'Greedy' in function:
-        x = [res['k'] for res in results['clustering']][:last_idx]
-        y = [x['silhouette']['MSS'] for x in results['clustering']][:first_idx] + \
-            [x['silhouette'][function] for x in results['clustering']][first_idx:last_idx]
+        x = [res['k'] for res in results['clustering']][:heuristic_idx['last_idx']]
+        y = [x['silhouette'][function] for x in results['clustering']][:heuristic_idx['last_idx']]
         return x, y
 
 
-def set_split_indexes(results: dict) -> tuple:
-    first_idx = last_idx = 0
-    for sil_type in results['clustering'][0]['silhouette'].keys():
-        if sil_type == 'Basic No Naive MSS':
-            last_idx = [x['silhouette'][sil_type] for x in results['clustering']].index(0)
-        if 'Greedy' in sil_type:
-            first_idx = next(
-                i for i, val in enumerate([res['silhouette'][sil_type] for res in results['clustering']]) if val != 0)
+def get_heuristic_indexes(results: dict) -> dict:
+    first_heuristic_idx, last_heuristic_idx = None, None
 
-    return first_idx, last_idx
+    for i, entry in enumerate([x['silhouette'] for x in results['clustering']]):
+        greedy_key = next((key for key in entry.keys() if 'Greedy' in key), None)
+
+        if greedy_key:
+            if first_heuristic_idx is None and entry['MSS'] != entry[greedy_key]:
+                first_heuristic_idx = i
+
+            if last_heuristic_idx is None and entry[greedy_key] is None:
+                last_heuristic_idx = i
+
+        if first_heuristic_idx is not None and last_heuristic_idx is not None:
+            break
+
+    return {
+        'first_idx': first_heuristic_idx,
+        'last_idx': last_heuristic_idx
+    }
+
+
+def find_index_of_zero_after_non_zero(values: list):
+    non_zero_indices = [i for i, v in enumerate(values) if v != 0]
+    if not non_zero_indices:
+        return None
+    first_zero_after = next((i for i in range(non_zero_indices[-1], len(values)) if values[i] == 0), None)
+    return first_zero_after
+
