@@ -1,7 +1,10 @@
+import os
 import copy
+import shutil
+from collections import Counter
 
 from .config import config
-from collections import Counter
+from .services import log_service
 from .models import OPERATION_MODE
 
 
@@ -42,30 +45,32 @@ def compile_train_classification_results(results: dict) -> dict:
 def compile_train_clustering_results(results: dict) -> list:
     # Init with the results of the first fold
     final_results = init_cluster_results(results=results)
+    division_counter = init_division_counter(results=results)
 
     # Sum
     for i in range(len(results)):
         for j, result in enumerate(results[i]):
             sub_results = result['silhouette']
             for sil_name, sil_value in sub_results.items():
+                if sil_value is None:
+                    continue
                 # Relevant only for heuristic methods: the value will be -1 only when the method didn't succeeded to
                 # find any potential solution - so we are doing linear completion based on the previous value
                 if sil_value == -1:
                     sil_value = results[i][j - 1]['silhouette'][sil_name]
                     results[i][j]['silhouette'][sil_name] = sil_value
+
                 final_results[j]['silhouette'][sil_name] += sil_value
+                division_counter[j][sil_name] += 1
 
     # Divide
-    for result in final_results:
-        k = result['k']
+    for idx, result in enumerate(final_results):
         sub_results = result['silhouette']
         for sil_name, sil_value in sub_results.items():
-            if sil_name in ['Silhouette', 'SS', 'MSS']:
-                sub_results[sil_name] /= len(results)
+            if division_counter[idx][sil_name] > 0:
+                sub_results[sil_name] /= division_counter[idx][sil_name]
             else:
-                counter = get_heuristic_method_counter(results=results, method=sil_name, k=k)
-                if counter > 0:
-                    sub_results[sil_name] /= counter
+                sub_results[sil_name] = None
     return final_results
 
 
@@ -79,9 +84,25 @@ def init_cluster_results(results):
     return clean_results
 
 
-def get_heuristic_method_counter(results: dict, method: str, k: int) -> int:
-    counter = 0
-    for result in results.values():
-        if result[k - 2]['silhouette'][method] > 0:
-            counter += 1
-    return counter
+def init_division_counter(results):
+    counter_list = []
+
+    for result in [x['silhouette'] for x in results[0]]:
+        counter_dict = {}
+        for sil, sil_value in result.items():
+            counter_dict[sil] = 0
+        counter_list.append(counter_dict)
+    return counter_list
+
+
+def clean_run():
+    try:
+        output_path = os.path.join(os.getcwd(), 'outputs')
+        last_modified_dir = max((d for d in os.listdir(output_path)
+                                 if os.path.isdir(os.path.join(output_path, d))),
+                                key=lambda d: os.path.getmtime(os.path.join(output_path, d)))
+
+        shutil.copy(os.path.join(output_path, 'Log.txt'), os.path.join(output_path, last_modified_dir))
+        os.remove(os.path.join(output_path, 'Log.txt'))
+    except Exception as e:
+        log_service.log('Critical', f'[Utils] - Failed to save log file. Error: [{e}]')

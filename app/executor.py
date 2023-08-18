@@ -2,7 +2,7 @@ from sklearn.model_selection import KFold
 
 from .config import config
 from .services import log_service
-from .utils import compile_train_results
+from .utils import compile_train_results, clean_run
 from .clustering import ClusteringService
 from .services.table_service import create_table
 from .data_graphing.knee_locator import get_knees
@@ -35,19 +35,19 @@ class Executor:
             # Stage 4 --> Benchmark evaluation
             self._run_benchmark_evaluation(data=data, k=len(final_features))
 
+        clean_run()
+
     def _run_train(self, data: DataObject) -> dict:
         results = self._get_train_evaluation(data=data)
-        knee_results = get_knees(results=results)
+        final_results = get_knees(results=results)
 
         plot_silhouette(stage='Test',
                         fold_index=0,
-                        clustering_results=results['clustering'])
+                        clustering_results=final_results['results']['clustering'])
 
         if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
-            plot_accuracy_to_silhouette(knee_res=knee_results,
-                                        clustering_res=results['clustering'],
-                                        classification_res=results['classification'])
-        return knee_results
+            plot_accuracy_to_silhouette(results=final_results)
+        return final_results['knee_results']
 
     def _run_test(self, data: DataObject, knee_results: dict) -> list:
         log_service.log(f'[Executor] : ******************** Test Stage ********************')
@@ -99,7 +99,7 @@ class Executor:
                                                          graph=graph_data,
                                                          data_props=data_props,
                                                          fold_index=fold_index)
-        # Ignore classification service in 'basic' mode
+        # Ignore classification service in 'basic' modes
         if config.operation_mode in [str(OPERATION_MODE.GBAFS), str(OPERATION_MODE.CS)]:
             return {'clustering': clustering_results}
 
