@@ -9,8 +9,8 @@ from ..services import log_service
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
-colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'brown', 'orange', 'purple', 'navy', 'maroon',
-          'pink', 'olive', 'turquoise', 'sienna', 'black']
+colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'pink', 'orange', 'olive', 'navy', 'maroon',
+          'brown', 'purple', 'turquoise', 'sienna', 'black']
 
 
 def save_plot(plot: plt, stage: str, folder_name: str, file_name: str, fold_index: int):
@@ -166,8 +166,12 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        ax.axvspan(results['heuristic_idx']['first_idx'], results['heuristic_idx']['last_idx'], color='gray', alpha=0.3)
-        ax.axvspan(results['heuristic_idx']['last_idx'], results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
+        first_idx = results['heuristic_idx']['first_idx']
+        last_idx = results['heuristic_idx']['last_idx']
+        ax.axvspan(results['results']['clustering'][first_idx]['k'],
+                   results['results']['clustering'][last_idx]['k'], color='gray', alpha=0.3)
+        ax.axvspan(results['results']['clustering'][last_idx]['k'],
+                   results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
 
         # Left Y axis (accuracy)
         c_index = 0

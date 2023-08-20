@@ -97,7 +97,7 @@ def init_division_counter(results):
 
 def clean_run():
     try:
-        output_path = os.path.join(os.getcwd(), 'outputs')
+        output_path = os.path.join(os.getcwd(), 'app', 'outputs')
         last_modified_dir = max((d for d in os.listdir(output_path)
                                  if os.path.isdir(os.path.join(output_path, d))),
                                 key=lambda d: os.path.getmtime(os.path.join(output_path, d)))

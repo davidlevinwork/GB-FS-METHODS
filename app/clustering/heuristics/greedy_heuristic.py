@@ -13,7 +13,7 @@ ALPHA = r'$\alpha$'
 
 
 class GreedyHeuristic(IHeuristic):
-    def __init__(self, alpha: float, epochs: int = 1):
+    def __init__(self, alpha: float, epochs: int = 100):
         super().__init__()
         self.alpha = alpha
         self.epochs = epochs

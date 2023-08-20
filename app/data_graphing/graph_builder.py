@@ -2,17 +2,13 @@ import time
 import math
 import numpy as np
 from sklearn.manifold import TSNE
+from itertools import combinations
 
 from ..config import config
 from ..services import log_service
 from .distance import get_distance
 from ..services.plot_service import plot_tsne
-from ..models import (
-    DataProps,
-    GraphObject,
-    DataCollection,
-    OPERATION_MODE
-)
+from ..models import DataProps, GraphObject, DataCollection, OPERATION_MODE
 
 
 class GraphBuilder:
@@ -49,13 +45,7 @@ class GraphBuilder:
 
     @staticmethod
     def _get_label_combinations(labels: np.ndarray) -> list:
-        combinations = []
-        min_label, max_label = int(np.min(labels)), int(np.max(labels))
-
-        for i_label in range(min_label, max_label + 1):
-            for j_label in range(i_label + 1, max_label + 1):
-                combinations.append((i_label, j_label))
-        return combinations
+        return list(combinations(np.unique(labels), 2))
 
     @staticmethod
     def _dimensionality_reduction(data: np.ndarray):
