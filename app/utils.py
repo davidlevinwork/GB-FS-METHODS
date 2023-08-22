@@ -54,7 +54,7 @@ def compile_train_clustering_results(results: dict) -> list:
             for sil_name, sil_value in sub_results.items():
                 if sil_value is None:
                     continue
-                # Relevant only for heuristic methods: the value will be -1 only when the method didn't succeeded to
+                # Relevant only for heuristic methods: the value will be -1 only when the method didn't succeed to
                 # find any potential solution - so we are doing linear completion based on the previous value
                 if sil_value == -1:
                     sil_value = results[i][j - 1]['silhouette'][sil_name]
@@ -95,7 +95,7 @@ def init_division_counter(results):
     return counter_list
 
 
-def clean_run():
+def clean_up():
     try:
         output_path = os.path.join(os.getcwd(), 'app', 'outputs')
         last_modified_dir = max((d for d in os.listdir(output_path)

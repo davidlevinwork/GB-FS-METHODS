@@ -24,6 +24,11 @@ def get_knees(results: dict):
         heuristic_idx = get_heuristic_indexes(results=results)
         for sil_type in results['clustering'][0]['silhouette'].keys():
             if sil_type not in ['Silhouette', 'SS']:
+                if sil_type == 'MSS':
+                    x, y = get_x_y_values(results=results, function=f'Full {sil_type}', heuristic_idx=heuristic_idx)
+                    knee_results.update(
+                        get_knee(x=x, y=y, function=f'Full {sil_type}')
+                    )
                 x, y = get_x_y_values(results=results, function=sil_type, heuristic_idx=heuristic_idx)
                 knee_results.update(
                     get_knee(x=x, y=y, function=sil_type)
@@ -63,13 +68,13 @@ def get_x_y_values(results: dict, function: str, heuristic_idx: dict) -> tuple:
         return x, y
 
     if function == 'MSS':
-        # x_range will be until the first idx of the heuristic methods
         x = [res['k'] for res in results['clustering']][:heuristic_idx['first_idx']]
         y = [x['silhouette'][function] for x in results['clustering']][:heuristic_idx['first_idx']]
+        return x, y
 
-        # x_range will be for the entire k range (like without using heuristics)
-        # x = [res['k'] for res in results['clustering']]
-        # y = [x['silhouette'][function] for x in results['clustering']]
+    if function == 'Full MSS':
+        x = [res['k'] for res in results['clustering']]
+        y = [x['silhouette']['MSS'] for x in results['clustering']]
         return x, y
 
     if 'Greedy' in function:
@@ -98,12 +103,3 @@ def get_heuristic_indexes(results: dict) -> dict:
         'first_idx': first_heuristic_idx,
         'last_idx': last_heuristic_idx
     }
-
-
-def find_index_of_zero_after_non_zero(values: list):
-    non_zero_indices = [i for i, v in enumerate(values) if v != 0]
-    if not non_zero_indices:
-        return None
-    first_zero_after = next((i for i in range(non_zero_indices[-1], len(values)) if values[i] == 0), None)
-    return first_zero_after
-

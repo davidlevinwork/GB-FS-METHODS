@@ -2,7 +2,7 @@ from sklearn.model_selection import KFold
 
 from .config import config
 from .services import log_service
-from .utils import compile_train_results, clean_run
+from .utils import compile_train_results
 from .clustering import ClusteringService
 from .services.table_service import create_table
 from .data_graphing.knee_locator import get_knees
@@ -34,8 +34,6 @@ class Executor:
             self._run_test_evaluation(data=data, features=final_features)
             # Stage 4 --> Benchmark evaluation
             self._run_benchmark_evaluation(data=data, k=len(final_features))
-
-        clean_run()
 
     def _run_train(self, data: DataObject) -> dict:
         results = self._get_train_evaluation(data=data)
