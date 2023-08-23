@@ -166,12 +166,9 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        first_idx = results['heuristic_idx']['first_idx']
-        last_idx = results['heuristic_idx']['last_idx']
-        ax.axvspan(results['results']['clustering'][first_idx]['k'],
-                   results['results']['clustering'][last_idx]['k'], color='gray', alpha=0.3)
-        ax.axvspan(results['results']['clustering'][last_idx]['k'],
-                   results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
+        first_idx, last_idx = results['heuristic_idx']['first_idx'], results['heuristic_idx']['last_idx']
+        ax.axvspan(first_idx, last_idx, color='gray', alpha=0.3)
+        ax.axvspan(last_idx, results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
 
         # Left Y axis (accuracy)
         c_index = 0
@@ -195,10 +192,12 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
         for sil_type in list(results['results']['clustering'][0]['silhouette'].keys()):
             if sil_type in ['Silhouette', 'SS']:
                 continue
-            sil_values = [res['silhouette'][sil_type] for res in results['results']['clustering']
-                          if sil_type in res['silhouette']]
-            k_indices = list(range(2, len(sil_values) + 2))
-            ax2.plot(k_indices, sil_values, linestyle="-", c=colors[c_index])
+            if sil_type == 'MSS':
+                sil_values = [res['silhouette'][sil_type] for res in results['results']['clustering']]
+            else:
+                sil_values = [res['silhouette'][sil_type] for res in results['results']['clustering']][:last_idx]
+            k_values = [res['k'] for res in results['results']['clustering']][:len(sil_values)]
+            ax2.plot(k_values, sil_values, linestyle="-", c=colors[c_index])
             sil_labels.append(sil_type)
             sil_handles.append(mlines.Line2D([], [], color=colors[c_index], linestyle='-', label=sil_type))
             c_index += 1
