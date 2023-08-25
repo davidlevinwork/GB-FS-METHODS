@@ -93,6 +93,8 @@ def plot_silhouette(clustering_results: list, stage: str, fold_index: int):
 
 
 def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int):
+    from scipy.spatial import ConvexHull
+
     try:
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -102,14 +104,29 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
             centroids = clustering_result['kmedoids']['medoid_loc']
             labels = clustering_result['kmedoids']['labels']
             u_labels = np.unique(clustering_result['kmedoids']['labels'])
-            for label in u_labels:
-                plt.scatter(data[labels == label, 0], data[labels == label, 1])
 
-            plt.scatter(centroids[:, 0], centroids[:, 1], marker='o', color='black', facecolors='none', linewidth=1.25)
+            for label in u_labels:
+                color = next(ax._get_lines.prop_cycler)['color']
+
+                medoid_point = centroids[label]
+                cluster_points = data[labels == label]
+                non_medoid_points = cluster_points[~np.all(cluster_points == medoid_point, axis=1)]
+                plt.scatter(non_medoid_points[:, 0], non_medoid_points[:, 1], color=color)
+
+                if len(cluster_points) >= 3:
+                    hull = ConvexHull(data[labels == label])
+                    plt.fill(data[labels == label, 0][hull.vertices], data[labels == label, 1][hull.vertices],
+                             color=color, alpha=0.3)
+
+                    for simplex in hull.simplices:
+                        plt.plot(data[labels == label, 0][simplex], data[labels == label, 1][simplex], color=color,
+                                 alpha=0.5, linewidth=0.8)
+
+                plt.scatter(centroids[label, 0], centroids[label, 1], marker='^', color=color, linewidth=2)
 
             # Plot labels
-            plt.xlabel(r'$\lambda_1\psi_1$')
-            plt.ylabel(r'$\lambda_2\psi_2$')
+            plt.xlabel(r't-SNE$_1$')
+            plt.ylabel(r't-SNE$_2$')
             plt.title(f'Clustering Result [K={k}]')
 
             # Show only the bottom and left ticks
@@ -141,8 +158,8 @@ def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, f
             plt.scatter(centroids[:, 0], centroids[:, 1], marker='o', color='black', facecolors='none',
                         linewidth=1.25, label="GB-AFS")
 
-            plt.xlabel(r'$\lambda_1\psi_1$')
-            plt.ylabel(r'$\lambda_2\psi_2$')
+            plt.xlabel(r't-SNE$_1$')
+            plt.ylabel(r't-SNE$_2$')
 
             # Show only the bottom and left ticks
             ax.xaxis.set_ticks_position('bottom')

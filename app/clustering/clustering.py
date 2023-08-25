@@ -104,7 +104,7 @@ class ClusteringService:
             plot_silhouette(stage=stage,
                             fold_index=fold_index,
                             clustering_results=results)
-        if config.operation_mode == str(OPERATION_MODE.FULL_GBAFS):
+        if config.operation_mode in (str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)):
             plot_clustering(stage=stage,
                             fold_index=fold_index,
                             data=graph.reduced_matrix,
