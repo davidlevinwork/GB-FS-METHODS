@@ -1,6 +1,7 @@
 import os
 import time
 import numpy as np
+from copy import deepcopy
 import concurrent.futures
 from sklearn_extra.cluster import KMedoids
 
@@ -24,13 +25,19 @@ class ClusteringService:
             tasks = [executor.submit(self._run_cluster_evaluation, data_props, graph, k) for k in k_range]
             results = [task.result() for task in concurrent.futures.as_completed(tasks)]
 
-        results = self._log_results(results=results)
-        self._plot_plots(stage=stage, graph=graph, results=results, fold_index=fold_index)
+        updated_results = [item['updated'] for item in results]
+        original_results = [item['original'] for item in results]
+
+        updated_results = self._log_results(results=updated_results)
+        original_results = self._log_results(results=original_results, log=False)
+
+        self._plot_plots(stage=stage, graph=graph, results=updated_results, fold_index=fold_index, extension='Updated')
+        self._plot_plots(stage=stage, graph=graph, results=original_results, fold_index=fold_index, extension='Original')
 
         end_time = time.time()
         log_service.log(f'[Clustering Service] : Total run time (sec): [{round(end_time - start_time, 3)}]')
 
-        return results
+        return updated_results
 
     def _run_cluster_evaluation(self, data_props: DataProps, graph: GraphObject, k: int) -> dict:
         kmedoids = self._run_kmedoids(data=graph.reduced_matrix, k=k)
@@ -42,6 +49,8 @@ class ClusteringService:
             'kmedoids': kmedoids,
             'silhouette': silhouette
         }
+
+        original_result = deepcopy(result)
 
         if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
             heuristic_results = self.heuristic_service.run(k=k,
@@ -56,7 +65,10 @@ class ClusteringService:
                 result['kmedoids']['medoids'] = heuristic_results['new_medoids']
                 result['kmedoids']['medoid_loc'] = heuristic_results['new_medoids_loc']
 
-        return result
+        return {
+            'original': original_result,
+            'updated': result
+        }
 
     @staticmethod
     def _run_kmedoids(data: np.ndarray, k: int) -> dict:
@@ -82,38 +94,41 @@ class ClusteringService:
         return sil_results
 
     @staticmethod
-    def _log_results(results: list) -> list:
+    def _log_results(results: list, log: bool = True) -> list:
         sorted_results = sorted(results, key=lambda x: x['k'])
 
-        for result in sorted_results:
-            k = result['k']
-            sil_values = ', '.join(f'({name}) - ({("%.4f" % value) if value is not None else "NA"})'
-                                   for name, value in result['silhouette'].items())
-            log_service.log(f'[Clustering Service] : Silhouette values for (k={k}) * {sil_values}')
+        if log:
+            for result in sorted_results:
+                k = result['k']
+                sil_values = ', '.join(f'({name}) - ({("%.4f" % value) if value is not None else "NA"})'
+                                       for name, value in result['silhouette'].items())
+                log_service.log(f'[Clustering Service] : Silhouette values for (k={k}) * {sil_values}')
 
-            if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
-                cost_values = ', '.join(f'({name}) - ({("%.4f" % value) if value is not None else "NA"})'
-                                        for name, value in result['costs'].items())
-                log_service.log(f'[Clustering Service] : Costs values for (k={k}) * {cost_values}')
+                if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
+                    cost_values = ', '.join(f'({name}) - ({("%.4f" % value) if value is not None else "NA"})'
+                                            for name, value in result['costs'].items())
+                    log_service.log(f'[Clustering Service] : Costs values for (k={k}) * {cost_values}')
 
         return sorted_results
 
     @staticmethod
-    def _plot_plots(results: list, graph: GraphObject, stage: str, fold_index: int):
+    def _plot_plots(results: list, graph: GraphObject, stage: str, fold_index: int, extension: str):
         if stage == "Train":
             plot_silhouette(stage=stage,
                             fold_index=fold_index,
                             clustering_results=results)
         if config.operation_mode in (str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)):
             plot_clustering(stage=stage,
+                            extension=extension,
                             fold_index=fold_index,
                             data=graph.reduced_matrix,
                             clustering_results=results)
             plot_jm_clustering(stage=stage,
+                               extension=extension,
                                fold_index=fold_index,
                                data=graph.reduced_matrix,
                                clustering_results=results)
-        if config.operation_mode == str(OPERATION_MODE.FULL_CS):
+        if config.operation_mode == str(OPERATION_MODE.FULL_CS) and extension == 'Updated':
             plot_costs_to_silhouette(stage=stage,
                                      fold_index=fold_index,
                                      clustering_res=results)

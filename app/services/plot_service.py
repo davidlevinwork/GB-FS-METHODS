@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+from scipy.spatial import ConvexHull
 
 from ..config import config
 from ..services import log_service
@@ -92,9 +93,7 @@ def plot_silhouette(clustering_results: list, stage: str, fold_index: int):
         log_service.log('Critical', f'[Plot Service] - Failed to plot silhouette graph. Error: [{e}]')
 
 
-def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int):
-    from scipy.spatial import ConvexHull
-
+def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int, extension: str):
     try:
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -138,14 +137,14 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
             ax.spines['right'].set_visible(False)
 
             plt.tight_layout()
-            save_plot(plot=plt, stage=stage, folder_name='Clustering', file_name=f'Clustering for k={k}',
+            save_plot(plot=plt, stage=stage, folder_name=f'{extension} Clustering', file_name=f'Clustering for k={k}',
                       fold_index=fold_index)
 
     except AssertionError as e:
         log_service.log('Critical', f'[Plot Service] - Failed to plot clustering graph. Error: [{e}]')
 
 
-def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int):
+def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int, extension: str):
     try:
         c = data[:, 0] + data[:, 1]
         for clustering_result in clustering_results:
@@ -171,8 +170,8 @@ def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, f
 
             plt.legend()
             plt.tight_layout()
-            save_plot(plot=plt, stage=stage, folder_name='JM Clustering', file_name=f'JM Clustering for k={k}',
-                      fold_index=fold_index)
+            save_plot(plot=plt, stage=stage, folder_name=f'{extension} JM Clustering',
+                      file_name=f'JM Clustering for k={k}', fold_index=fold_index)
 
     except AssertionError as e:
         log_service.log('Critical', f'[Plot Service] - Failed to plot jm-clustering graph. Error: [{e}]')
