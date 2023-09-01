@@ -6,32 +6,23 @@ from ..models import OPERATION_MODE
 
 
 def get_knees(results: dict):
-    # REMOVE
-    # del results['clustering'][0]
-    # del results['clustering'][0]
-    # for key in results['classification']:
-    #    results['classification'][key] = results['classification'][key][2:]
-    # REMOVE
-
     if config.operation_mode in [str(OPERATION_MODE.GBAFS), str(OPERATION_MODE.FULL_GBAFS)]:
         x = [res['k'] for res in results['clustering']]
         y = [res['silhouette']['MSS'] for res in results['clustering']]
 
-        return get_knee(x=x, y=y, function="MSS"), results
+        return {
+            'results': results,
+            'knee_results': get_knee(x=x, y=y, function="MSS")
+        }
 
     if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
         knee_results = {}
         heuristic_idx = get_heuristic_indexes(results=results)
         for sil_type in results['clustering'][0]['silhouette'].keys():
-            if sil_type not in ['Silhouette', 'SS']:
-                if sil_type == 'MSS':
-                    x, y = get_x_y_values(results=results, function=f'Full {sil_type}', heuristic_idx=heuristic_idx)
-                    knee_results.update(
-                        get_knee(x=x, y=y, function=f'Full {sil_type}')
-                    )
-                x, y = get_x_y_values(results=results, function=sil_type, heuristic_idx=heuristic_idx)
+            if sil_type == 'MSS':
+                x, y = get_x_y_values(results=results, function=f'Full {sil_type}', heuristic_idx=heuristic_idx)
                 knee_results.update(
-                    get_knee(x=x, y=y, function=sil_type)
+                    get_knee(x=x, y=y, function=f'Full {sil_type}')
                 )
         return {
             'results': results,

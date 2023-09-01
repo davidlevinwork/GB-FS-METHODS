@@ -7,6 +7,7 @@ from scipy.spatial import ConvexHull
 
 from ..config import config
 from ..services import log_service
+from ..models import OPERATION_MODE
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
@@ -182,9 +183,10 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        first_idx, last_idx = results['heuristic_idx']['first_idx'], results['heuristic_idx']['last_idx']
-        ax.axvspan(first_idx, last_idx, color='gray', alpha=0.3)
-        ax.axvspan(last_idx, results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
+        if config.operation_mode == str(OPERATION_MODE.FULL_CS):
+            first_idx, last_idx = results['heuristic_idx']['first_idx'], results['heuristic_idx']['last_idx']
+            ax.axvspan(first_idx, last_idx, color='gray', alpha=0.3)
+            ax.axvspan(last_idx, results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
 
         # Left Y axis (accuracy)
         c_index = 0

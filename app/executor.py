@@ -54,7 +54,7 @@ class Executor:
                                   fold_index=0,
                                   data_props=data.data_props,
                                   data={'train': data.train_data},
-                                  k_range=[value['knee'] for key, value in knee_results.items() if "Greedy" in key])
+                                  k_range=[value['knee'] for key, value in knee_results.items() if key == 'Full MSS'])
         return results['clustering'][0]['kmedoids']['medoids']
 
     def _get_train_evaluation(self, data: DataObject):
