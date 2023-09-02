@@ -8,6 +8,9 @@ from .services import log_service
 from .models import OPERATION_MODE, DataObject
 
 
+EPSILON = 0.01
+
+
 ##################################################
 # Auxiliary functions for managing train results #
 ##################################################
@@ -45,7 +48,9 @@ def compile_train_classification_results(results: dict) -> dict:
 def compile_train_clustering_results(results: dict) -> list:
     # Init with the results of the first fold
     final_results = init_cluster_results(results=results)
+
     division_counter = init_division_counter(results=results)
+    division_cost_counter = init_cost_division_counter(results=results)
 
     # Sum
     for i in range(len(results)):
@@ -71,6 +76,30 @@ def compile_train_clustering_results(results: dict) -> list:
                 sub_results[sil_name] /= division_counter[idx][sil_name]
             else:
                 sub_results[sil_name] = None
+
+    for i in range(len(results)):
+        for j, result in enumerate(results[i]):
+            sub_results = result['costs']
+            for cost_name, cost_value in sub_results.items():
+                if cost_value is None:
+                    continue
+
+                if cost_value == -1:
+                    cost_value = results[i][j - 1]['costs'][cost_name]
+                    results[i][j]['costs'][cost_name] = cost_value
+
+                final_results[j]['costs'][cost_name] += cost_value
+                division_cost_counter[j][cost_name] += 1
+
+    # Divide
+    for idx, result in enumerate(final_results):
+        sub_results = result['costs']
+        for cost_name, cost_value in sub_results.items():
+            if division_counter[idx][cost_name] > 0:
+                sub_results[cost_name] /= division_counter[idx][cost_name]
+            else:
+                sub_results[cost_name] = None
+
     return final_results
 
 
@@ -81,6 +110,8 @@ def init_cluster_results(results):
     for result in clean_results:
         for sil_name in result['silhouette'].keys():
             result['silhouette'][sil_name] = 0
+        for cost_name in result['costs'].keys():
+            result['costs'][cost_name] = 0
     return clean_results
 
 
@@ -95,16 +126,25 @@ def init_division_counter(results):
     return counter_list
 
 
-def get_legal_knee_value(data: DataObject, results: dict):
+def init_cost_division_counter(results):
+    counter_list = []
+
+    for result in [x['costs'] for x in results[0]]:
+        counter_dict = {}
+        for cost, cost_value in result.items():
+            counter_dict[cost] = 0
+        counter_list.append(counter_dict)
+    return counter_list
+
+
+def get_legal_knee_value(results: dict):
     knee_value = results['knee_results']['Full MSS']['knee']
     relevant_k_results = sorted([item for item in results['results']['clustering'] if item['k'] <= knee_value],
                                 key=lambda x: x['k'], reverse=True)
     for item in relevant_k_results:
-        k = item['k']
-        medoids_indices = item['kmedoids']['medoids']
-        medoid_sum = sum(list(data.data_props.feature_costs.values())[i] for i in medoids_indices)
-        if medoid_sum <= config.constraint_satisfaction.budget:
-            return k
+        if abs(next((item['silhouette'][key] for key in item['silhouette'] if 'Greedy' in key), 0) -
+               item['silhouette']['MSS']) <= EPSILON:
+            return item['k']
 
 
 def clean_up():

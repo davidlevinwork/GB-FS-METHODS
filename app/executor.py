@@ -40,10 +40,14 @@ class Executor:
         final_results = get_knees(results=results)
 
         if config.operation_mode == str(OPERATION_MODE.FULL_CS):
-            print(f"'OLD KNEE: {final_results['knee_results']['Full MSS']['knee']}'")
-            knee = get_legal_knee_value(data=data, results=final_results)
-            final_results['knee_results']['Full MSS']['knee'] = knee
-            print(f"'NEW KNEE: {final_results['knee_results']['Full MSS']['knee']}'")
+            old_knee = final_results['knee_results']['Full MSS']['knee']
+            new_knee = get_legal_knee_value(results=final_results)
+
+            if new_knee != old_knee:
+                final_results['knee_results']['New MSS'] = {}
+                final_results['knee_results']['New MSS']['knee'] = get_legal_knee_value(results=final_results)
+
+            print(f"Old Knee ==> {old_knee}\nNew Knee ==> {new_knee}")
 
         plot_silhouette(stage='Test',
                         fold_index=0,

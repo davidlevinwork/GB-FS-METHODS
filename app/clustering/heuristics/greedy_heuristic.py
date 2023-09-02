@@ -58,7 +58,7 @@ class GreedyHeuristic(IHeuristic):
             results = {
                 'is_new_features': False,
                 'mss': -1,
-                'cost': 0
+                'cost': -1
             }
 
         end_time = time.time()
@@ -233,8 +233,7 @@ class GreedyHeuristic(IHeuristic):
                                    labels=labels,
                                    centroids=medoids_loc,
                                    X=graph.reduced_matrix)
-        cost = self.get_features_cost(data_props=data_props,
-                                      features=np.array([medoid['medoid'] for medoid in self.cluster_details]))
+        cost = self.get_features_cost(data_props=data_props, features=medoids)
 
         return {
             'mss': mss,
