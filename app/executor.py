@@ -2,7 +2,6 @@ from sklearn.model_selection import KFold
 
 from .config import config
 from .services import log_service
-from .utils import compile_train_results
 from .clustering import ClusteringService
 from .services.table_service import create_table
 from .data_graphing.knee_locator import get_knees
@@ -10,6 +9,7 @@ from .classification import ClassificationService
 from .data_graphing.graph_builder import GraphBuilder
 from .data_graphing.data_processor import DataProcessor
 from .models import DataObject, DataProps, OPERATION_MODE
+from .utils import compile_train_results, get_legal_knee_value
 from .classification.benchmarking import select_k_best_features
 from .services.plot_service import plot_accuracy_to_silhouette, plot_silhouette
 
@@ -38,6 +38,12 @@ class Executor:
     def _run_train(self, data: DataObject) -> dict:
         results = self._get_train_evaluation(data=data)
         final_results = get_knees(results=results)
+
+        if config.operation_mode == str(OPERATION_MODE.FULL_CS):
+            print(f"'OLD KNEE: {final_results['knee_results']['Full MSS']['knee']}'")
+            knee = get_legal_knee_value(data=data, results=final_results)
+            final_results['knee_results']['Full MSS']['knee'] = knee
+            print(f"'NEW KNEE: {final_results['knee_results']['Full MSS']['knee']}'")
 
         plot_silhouette(stage='Test',
                         fold_index=0,

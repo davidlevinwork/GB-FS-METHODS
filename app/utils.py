@@ -5,7 +5,7 @@ from collections import Counter
 
 from .config import config
 from .services import log_service
-from .models import OPERATION_MODE
+from .models import OPERATION_MODE, DataObject
 
 
 ##################################################
@@ -93,6 +93,18 @@ def init_division_counter(results):
             counter_dict[sil] = 0
         counter_list.append(counter_dict)
     return counter_list
+
+
+def get_legal_knee_value(data: DataObject, results: dict):
+    knee_value = results['knee_results']['Full MSS']['knee']
+    relevant_k_results = sorted([item for item in results['results']['clustering'] if item['k'] <= knee_value],
+                                key=lambda x: x['k'], reverse=True)
+    for item in relevant_k_results:
+        k = item['k']
+        medoids_indices = item['kmedoids']['medoids']
+        medoid_sum = sum(list(data.data_props.feature_costs.values())[i] for i in medoids_indices)
+        if medoid_sum <= config.constraint_satisfaction.budget:
+            return k
 
 
 def clean_up():
