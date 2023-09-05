@@ -9,9 +9,9 @@ from .classification import ClassificationService
 from .data_graphing.graph_builder import GraphBuilder
 from .data_graphing.data_processor import DataProcessor
 from .models import DataObject, DataProps, OPERATION_MODE
+from .services.plot_service import plot_accuracy_to_silhouette
 from .utils import compile_train_results, get_legal_knee_value
 from .classification.benchmarking import select_k_best_features
-from .services.plot_service import plot_accuracy_to_silhouette, plot_silhouette
 
 
 class Executor:
@@ -33,7 +33,7 @@ class Executor:
             # Stage 3 --> Evaluate test stage (selected features)
             self._run_test_evaluation(data=data, features=final_features)
             # Stage 4 --> Benchmark evaluation
-            self._run_benchmark_evaluation(data=data, k=len(final_features))
+            self._run_benchmark_evaluation(data=data, knee_results=knee_results)
 
     def _run_train(self, data: DataObject) -> dict:
         results = self._get_train_evaluation(data=data)
@@ -44,14 +44,11 @@ class Executor:
             new_knee = get_legal_knee_value(results=final_results)
 
             if new_knee != old_knee:
-                final_results['knee_results']['New MSS'] = {}
-                final_results['knee_results']['New MSS']['knee'] = get_legal_knee_value(results=final_results)
+                final_results['knee_results']['Heuristic MSS'] = {}
+                final_results['knee_results']['Heuristic MSS']['knee'] = get_legal_knee_value(results=final_results)
 
-            print(f"Old Knee ==> {old_knee}\nNew Knee ==> {new_knee}")
-
-        plot_silhouette(stage='Test',
-                        fold_index=0,
-                        clustering_results=final_results['results']['clustering'])
+            log_service.log(f"[Executor] : 'Original' knee based on MSS graph = [{old_knee}]. "
+                            f"'Updated' knee based on Heuristic MSS graph = [{new_knee}]")
 
         if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
             plot_accuracy_to_silhouette(results=final_results)
@@ -65,7 +62,11 @@ class Executor:
                                   data_props=data.data_props,
                                   data={'train': data.train_data},
                                   k_range=[value['knee'] for key, value in knee_results.items() if key == 'Full MSS'])
-        return results['clustering'][0]['kmedoids']['medoids']
+
+        final_features = results['clustering'][0]['kmedoids']['medoids']
+        log_service.log(f'[Executor] : ===> Final k=[{len(final_features)}] features selected are: '
+                        f'[{", ".join(map(str, final_features))}] <===')
+        return final_features
 
     def _get_train_evaluation(self, data: DataObject):
         clustering_results = {}
@@ -137,17 +138,19 @@ class Executor:
                      fold_index=0,
                      classification_res={"Test": final_results})
 
-    def _run_benchmark_evaluation(self, data: DataObject, k: int):
+    def _run_benchmark_evaluation(self, data: DataObject, knee_results: dict):
         log_service.log(f'[Executor] : ********************* Benchmark Evaluations *********************')
 
         classifications_res = []
         algorithms = ["Relief", "Fisher", "CFS", "MRMR", "Random"]
+        k = knee_results['Heuristic MSS']['knee'] if 'Heuristic MSS' in knee_results \
+            else knee_results['Full MSS']['knee']
+
         for algo in algorithms:
-            new_X = select_k_best_features(k=k,
-                                           algorithm=algo,
-                                           X=data.test_data.x,
-                                           y=data.test_data.y)
-            classification_res = self.classification_service.evaluate(k=k,
+            new_k, new_X = select_k_best_features(k=k,
+                                                  data=data,
+                                                  algorithm=algo)
+            classification_res = self.classification_service.evaluate(k=new_k,
                                                                       X=new_X,
                                                                       y=data.test_data.y,
                                                                       mode="Test")

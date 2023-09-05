@@ -1,15 +1,33 @@
 import time
 import pandas as pd
+from copy import deepcopy
 from random import sample
 
+from ..config import config
 from ..services import log_service
+from ..models import OPERATION_MODE, DataObject
 from skfeature.function.statistical_based.CFS import cfs
 from skfeature.function.similarity_based.reliefF import reliefF
 from skfeature.function.information_theoretical_based.MRMR import mrmr
 from skfeature.function.similarity_based.fisher_score import fisher_score
 
 
-def select_k_best_features(X: pd.DataFrame, y: pd.DataFrame, k: int, algorithm: str):
+def select_k_best_features(data: DataObject, k: int, algorithm: str):
+    k_features = get_k_features(X=data.test_data.x, y=data.test_data.y, k=k, algorithm=algorithm)
+    if config.operation_mode == str(OPERATION_MODE.FULL_GBAFS):
+        return k, k_features
+
+    k_features_copy = deepcopy(k_features)
+    while k_features_copy.columns.tolist():
+        total_cost = sum_feature_costs(features=list(k_features_copy), data=data)
+        if total_cost <= config.constraint_satisfaction.budget:
+            return len(k_features_copy.columns), k_features_copy
+        else:
+            k_features_copy.drop(k_features_copy.columns[-1], axis=1, inplace=True)
+    return k, k_features
+
+
+def get_k_features(X: pd.DataFrame, y: pd.DataFrame, k: int, algorithm: str):
     """
     Select k best features from the dataset using the specified algorithm.
 
@@ -48,3 +66,7 @@ def select_k_best_features(X: pd.DataFrame, y: pd.DataFrame, k: int, algorithm: 
                     f' [{round(end_time - start_time, 3)}]')
 
     return X[selected_features]
+
+
+def sum_feature_costs(features: list, data: DataObject):
+    return sum(data.data_props.feature_costs[feature_name] for feature_name in list(features))

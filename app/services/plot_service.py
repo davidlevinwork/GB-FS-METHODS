@@ -11,8 +11,8 @@ from ..models import OPERATION_MODE
 
 dt = datetime.now()
 time_stamp = datetime.timestamp(dt)
-colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'pink', 'orange', 'olive', 'navy', 'maroon',
-          'brown', 'purple', 'turquoise', 'sienna', 'black']
+colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'brown', 'black', 'orange', 'yellow', 'navy', 'maroon',
+          'olive', 'purple', 'turquoise', 'sienna', 'pink']
 
 
 def save_plot(plot: plt, stage: str, folder_name: str, file_name: str, fold_index: int):
@@ -35,6 +35,9 @@ def save_plot(plot: plt, stage: str, folder_name: str, file_name: str, fold_inde
 
 def plot_tsne(data: np.ndarray, stage: str, fold_index: int):
     try:
+        if stage == 'Test':
+            return
+
         plt.clf()
         plt.figure(figsize=(8, 6))
 
@@ -96,6 +99,9 @@ def plot_silhouette(clustering_results: list, stage: str, fold_index: int):
 
 def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int, extension: str):
     try:
+        if stage == 'Test':
+            return
+
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
@@ -138,8 +144,8 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
             ax.spines['right'].set_visible(False)
 
             plt.tight_layout()
-            save_plot(plot=plt, stage=stage, folder_name=f'{extension} Clustering', file_name=f'Clustering for k={k}',
-                      fold_index=fold_index)
+            save_plot(plot=plt, stage=stage, folder_name=f'Clustering/{extension} Clustering',
+                      file_name=f'Clustering for k={k}', fold_index=fold_index)
 
     except AssertionError as e:
         log_service.log('Critical', f'[Plot Service] - Failed to plot clustering graph. Error: [{e}]')
@@ -147,6 +153,9 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
 
 def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int, extension: str):
     try:
+        if stage == 'Test':
+            return
+
         c = data[:, 0] + data[:, 1]
         for clustering_result in clustering_results:
             plt.clf()
@@ -171,7 +180,7 @@ def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, f
 
             plt.legend()
             plt.tight_layout()
-            save_plot(plot=plt, stage=stage, folder_name=f'{extension} JM Clustering',
+            save_plot(plot=plt, stage=stage, folder_name=f'Clustering/{extension} JM Clustering',
                       file_name=f'JM Clustering for k={k}', fold_index=fold_index)
 
     except AssertionError as e:
@@ -184,8 +193,8 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
         fig, ax = plt.subplots(figsize=(8, 6))
 
         if config.operation_mode == str(OPERATION_MODE.FULL_CS):
-            first_idx, last_idx = results['heuristic_idx']['first_idx'], results['heuristic_idx']['last_idx']
-            ax.axvspan(first_idx, last_idx, color='gray', alpha=0.3)
+            first_idx, last_idx = results['heuristic_idx']['first_idx'] + 1, results['heuristic_idx']['last_idx'] + 1
+            ax.axvspan(first_idx, last_idx, color='gray', alpha=0.25)
             ax.axvspan(last_idx, results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)
 
         # Left Y axis (accuracy)
@@ -222,7 +231,7 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
 
         # Creating a separate legend for each axis
         legend1 = ax.legend(classifier_handles, classifier_labels, title="Classifiers", loc='upper left',
-                            bbox_to_anchor=(-0.15, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
+                            bbox_to_anchor=(0, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
         # ax.add_artist(legend1)
         legend2 = ax2.legend(sil_handles, sil_labels, title="Silhouette Values", loc='upper right',
                              bbox_to_anchor=(1, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
@@ -233,25 +242,26 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
         for sil_type, knee_value in results['knee_results'].items():
             if knee_value['knee'] is not None:
                 ax2.axvline(x=knee_value['knee'], linestyle=':', c=colors[c_index])
-                knee_labels.append(sil_type)
+                knee_labels.append(f'{sil_type}: {knee_value["knee"]}')
                 knee_handles.append(
                     mlines.Line2D([], [], color=colors[c_index], linestyle=':', label=f'Knee: {sil_type}'))
                 c_index += 1
 
         knee_legend = ax2.legend(knee_handles, knee_labels, title="Knee Values", loc='upper center',
-                                 bbox_to_anchor=(0.3, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
+                                 bbox_to_anchor=(0.5, 1.15), ncol=2, shadow=True, fancybox=True, fontsize='xx-small')
         ax2.add_artist(knee_legend)
 
         ax2.set_ylabel("Silhouette")
         ax2.spines['top'].set_visible(False)
 
         # Compute the desired number of x-ticks and the step size
-        n_ticks = 10
+        n_ticks = 20
         k_values = [int(res['k']) for res in results['results']['clustering']]
         k_range = max(k_values) - min(k_values)
-        step = max(1, k_range // n_ticks)  # Ensure step is at least 1
+        step = max(1, k_range // n_ticks)
         # Set the x-ticks
         ax.xaxis.set_ticks(np.arange(min(k_values), max(k_values) + 1, step).astype(int))
+        ax.tick_params(axis='x', labelsize=7)
 
         save_plot(plot=plt, stage=stage, folder_name='Accuracy', file_name='Accuracy-Silhouette', fold_index=0)
     except AssertionError as e:

@@ -16,7 +16,6 @@ class DataCollection:
 class DataProps:
     n_labels: int
     labels: np.ndarray
-
     n_features: int
     features: pd.DataFrame
     feature_costs: Dict[str, float]
