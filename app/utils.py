@@ -5,7 +5,7 @@ from collections import Counter
 
 from .config import config
 from .services import log_service
-from .models import OPERATION_MODE, DataObject
+from .models import OPERATION_MODE
 
 
 EPSILON = 0.01
