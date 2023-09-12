@@ -1,4 +1,5 @@
 import time
+import numpy as np
 import pandas as pd
 from copy import deepcopy
 from random import sample
@@ -46,16 +47,16 @@ def get_k_features(X: pd.DataFrame, y: pd.DataFrame, k: int, algorithm: str):
 
     if algorithm == "Relief":
         score = reliefF(X.to_numpy(), y)
-        selected_features = X.columns[score.argsort()[-k:]].tolist()
+        selected_features = X.columns[score.argsort()[-k:][np.argsort(score[score.argsort()[-k:]])[::-1]]].tolist()
     elif algorithm == "Fisher":
         score = fisher_score(X.to_numpy(), y)
-        selected_features = X.columns[score.argsort()[-k:]].tolist()
+        selected_features = X.columns[score.argsort()[-k:][np.argsort(score[score.argsort()[-k:]])[::-1]]].tolist()
     elif algorithm == "CFS":
         score = cfs(X.to_numpy(), y)
-        selected_features = X.columns[score.argsort()[-k:]].tolist()
+        selected_features = X.columns[score.argsort()[-k:][np.argsort(score[score.argsort()[-k:]])[::-1]]].tolist()
     elif algorithm == "MRMR":
         score = mrmr(X.to_numpy(), y, k)
-        selected_features = X.columns[score].tolist()
+        selected_features = X.columns[score.argsort()[-k:][np.argsort(score[score.argsort()[-k:]])[::-1]]].tolist()
     elif algorithm == "Random":
         selected_features = sample(X.columns.tolist(), k)
     else:
