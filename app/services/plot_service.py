@@ -112,8 +112,7 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
             u_labels = np.unique(clustering_result['kmedoids']['labels'])
 
             for label in u_labels:
-                color = next(ax._get_lines.prop_cycler)['color']
-
+                color = 'black'
                 medoid_point = centroids[label]
                 cluster_points = data[labels == label]
                 non_medoid_points = cluster_points[~np.all(cluster_points == medoid_point, axis=1)]
@@ -128,7 +127,7 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
                         plt.plot(data[labels == label, 0][simplex], data[labels == label, 1][simplex], color=color,
                                  alpha=0.5, linewidth=0.8)
 
-                plt.scatter(centroids[label, 0], centroids[label, 1], marker='^', color=color, linewidth=2)
+                plt.scatter(centroids[label, 0], centroids[label, 1], marker='^', color='red', linewidth=2)
 
             # Plot labels
             plt.xlabel(r't-SNE$_1$')
@@ -146,6 +145,10 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
             plt.tight_layout()
             save_plot(plot=plt, stage=stage, folder_name=f'Clustering/{extension} Clustering',
                       file_name=f'Clustering for k={k}', fold_index=fold_index)
+
+    except AssertionError as e:
+        log_service.log('Critical', f'[Plot Service] - Failed to plot clustering graph. Error: [{e}]')
+
 
     except AssertionError as e:
         log_service.log('Critical', f'[Plot Service] - Failed to plot clustering graph. Error: [{e}]')
