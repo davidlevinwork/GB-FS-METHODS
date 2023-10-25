@@ -21,6 +21,7 @@ class TSNEAlgorithmConfig(BaseModel):
 class BudgetConstraint(BaseModel):
     budget: float
     generate_costs: bool
+    cost_column_name: str
 
 
 class Config(BaseModel):

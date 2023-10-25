@@ -28,7 +28,7 @@ class DataProcessor:
             n_labels=int(train.y.nunique()),
             features=train.x.columns,
             n_features=len(train.x.columns),
-            feature_costs=self._generate_feature_costs(features=train.x.columns)
+            feature_costs=self._set_feature_costs(x=train.x)
         )
 
         end_time = time.time()
@@ -84,5 +84,13 @@ class DataProcessor:
         return train, test
 
     @staticmethod
-    def _generate_feature_costs(features: pd.DataFrame) -> dict:
+    def _set_feature_costs(x: pd.DataFrame) -> dict:
+        epsilon = 1e-10
+        features = x.columns
+        col_name = config.budget_constraint.cost_column_name
+
+        if not config.budget_constraint.generate_costs:
+            if col_name is not None and col_name in features:
+                costs = x[col_name].fillna(epsilon).to_list()                       # Ensure no missing values
+                return {feature: cost for feature, cost in zip(features, costs)}
         return {feature: random.uniform(0, 2) for feature in features}

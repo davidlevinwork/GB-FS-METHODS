@@ -18,3 +18,4 @@ tsne_algorithm:
 budget_constraint:
   budget: 5
   generate_costs: true
+  cost_column_name: cost
