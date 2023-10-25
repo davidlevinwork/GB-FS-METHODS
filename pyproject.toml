@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "gbafs"
-version = "0.1.0"
-description = "Graph-Based Automatic Feature Selection for Multi-Class Classification via Mean Simplified Silhouette"
-authors = ["David Levin"]
+name = "GB-FS-Methods"
+version = "1.0.0"
+description = "Graph-Based Feature Selection Methods"
+authors = ["David Levin <david.levin2@live.biu.ac.il>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
