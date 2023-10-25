@@ -6,7 +6,7 @@ from ..models import OPERATION_MODE
 
 
 def get_knees(results: dict):
-    if config.operation_mode in [str(OPERATION_MODE.GBAFS), str(OPERATION_MODE.FULL_GBAFS)]:
+    if config.operation_mode in [str(OPERATION_MODE.GB_AFS), str(OPERATION_MODE.FULL_GB_AFS)]:
         x = [res['k'] for res in results['clustering']]
         y = [res['silhouette']['MSS'] for res in results['clustering']]
 
@@ -15,7 +15,7 @@ def get_knees(results: dict):
             'knee_results': get_knee(x=x, y=y, function="MSS")
         }
 
-    if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
+    if config.operation_mode in [str(OPERATION_MODE.GB_BC_FS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
         knee_results = {}
         heuristic_idx = get_heuristic_indexes(results=results)
         for sil_type in results['clustering'][0]['silhouette'].keys():

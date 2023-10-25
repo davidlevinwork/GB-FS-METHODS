@@ -21,7 +21,7 @@ class GraphBuilder:
         matrix = self._calculate_separation_matrix()
         reduced_matrix = self._dimensionality_reduction(data=matrix)
 
-        if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
+        if config.operation_mode in [str(OPERATION_MODE.FULL_GB_AFS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
             plot_tsne(data=reduced_matrix, stage=stage, fold_index=self.fold_index)
 
         return GraphObject(

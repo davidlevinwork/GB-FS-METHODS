@@ -150,10 +150,6 @@ def plot_clustering(data: np.ndarray, clustering_results: list, stage: str, fold
         log_service.log('Critical', f'[Plot Service] - Failed to plot clustering graph. Error: [{e}]')
 
 
-    except AssertionError as e:
-        log_service.log('Critical', f'[Plot Service] - Failed to plot clustering graph. Error: [{e}]')
-
-
 def plot_jm_clustering(data: np.ndarray, clustering_results: list, stage: str, fold_index: int, extension: str):
     try:
         if stage == 'Test':
@@ -195,7 +191,7 @@ def plot_accuracy_to_silhouette(results: dict, stage: str = 'Test'):
         plt.clf()
         fig, ax = plt.subplots(figsize=(8, 6))
 
-        if config.operation_mode == str(OPERATION_MODE.FULL_CS):
+        if config.operation_mode == str(OPERATION_MODE.FULL_GB_BC_FS):
             first_idx, last_idx = results['heuristic_idx']['first_idx'] + 1, results['heuristic_idx']['last_idx'] + 1
             ax.axvspan(first_idx, last_idx, color='gray', alpha=0.25)
             ax.axvspan(last_idx, results['results']['clustering'][-1]['k'], color='wheat', alpha=0.3)

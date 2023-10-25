@@ -1,4 +1,5 @@
-# Operations mode = {GBAFS, Full-GBAFS, CS, Full-CS}
+# Operations mode = {GB_AFS,   Full-GB_AFS,
+#                    GB_BC_FS, Full-GB_BC_FS}
 operation_mode: Full-CS
 
 data:

@@ -37,10 +37,10 @@ class GraphObject:
 
 
 class OPERATION_MODE(Enum):
-    GBAFS = 'GBAFS'
-    FULL_GBAFS = 'Full-GBAFS'
-    CS = 'CS'
-    FULL_CS = 'Full-CS'
+    GB_AFS = 'GB_AFS'
+    FULL_GB_AFS = 'Full-GB_AFS'
+    GB_BC_FS = 'GB_BC_FS'
+    FULL_GB_BC_FS = 'Full-GB_BC_FS'
 
     def __str__(self):
         return self.value

@@ -29,7 +29,7 @@ class Executor:
         # STAGE 2 --> Test stage
         final_features = self._run_test(data=data, knee_results=knee_results)
 
-        if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
+        if config.operation_mode in [str(OPERATION_MODE.FULL_GB_AFS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
             # Stage 3 --> Evaluate test stage (selected features)
             self._run_test_evaluation(data=data, features=final_features)
             # Stage 4 --> Benchmark evaluation
@@ -39,7 +39,7 @@ class Executor:
         results = self._get_train_evaluation(data=data)
         final_results = get_knees(results=results)
 
-        if config.operation_mode == str(OPERATION_MODE.FULL_CS):
+        if config.operation_mode == str(OPERATION_MODE.FULL_GB_BC_FS):
             old_knee = final_results['knee_results']['Full MSS']['knee']
             new_knee = get_legal_knee_value(results=final_results)
 
@@ -50,7 +50,7 @@ class Executor:
             log_service.log(f"[Executor] : 'Original' knee based on MSS graph = [{old_knee}]. "
                             f"'Updated' knee based on Heuristic MSS graph = [{new_knee}]")
 
-        if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
+        if config.operation_mode in [str(OPERATION_MODE.FULL_GB_AFS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
             plot_accuracy_to_silhouette(results=final_results)
         return final_results['knee_results']
 
@@ -89,7 +89,7 @@ class Executor:
                                       k_range=[*range(2, len(data.data_props.features), 1)])
 
             clustering_results[i] = results['clustering']
-            if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
+            if config.operation_mode in [str(OPERATION_MODE.FULL_GB_AFS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
                 classification_results[i] = results['classification']
 
         train_results = compile_train_results(clustering_results=clustering_results,
@@ -109,7 +109,7 @@ class Executor:
                                                          data_props=data_props,
                                                          fold_index=fold_index)
         # Ignore classification service in 'basic' modes
-        if config.operation_mode in [str(OPERATION_MODE.GBAFS), str(OPERATION_MODE.CS)]:
+        if config.operation_mode in [str(OPERATION_MODE.GB_AFS), str(OPERATION_MODE.GB_BC_FS)]:
             return {'clustering': clustering_results}
 
         # Execute classification service (Evaluation + Tables)

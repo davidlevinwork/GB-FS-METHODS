@@ -15,7 +15,7 @@ from skfeature.function.similarity_based.fisher_score import fisher_score
 
 def select_k_best_features(data: DataObject, k: int, algorithm: str):
     k_features = get_k_features(X=data.test_data.x, y=data.test_data.y, k=k, algorithm=algorithm)
-    if config.operation_mode == str(OPERATION_MODE.FULL_GBAFS):
+    if config.operation_mode == str(OPERATION_MODE.FULL_GB_AFS):
         return k, k_features
 
     k_features_copy = deepcopy(k_features)

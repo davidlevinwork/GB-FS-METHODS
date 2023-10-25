@@ -52,7 +52,7 @@ class ClusteringService:
 
         original_result = deepcopy(result)
 
-        if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
+        if config.operation_mode in [str(OPERATION_MODE.GB_BC_FS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
             heuristic_results = self.heuristic_service.run(k=k,
                                                            graph=graph,
                                                            kmedoids=kmedoids,
@@ -84,7 +84,7 @@ class ClusteringService:
     def _get_silhouette_value(data: np.ndarray, labels: np.ndarray, centroids: np.ndarray):
         sil_results = {}
 
-        if config.operation_mode in [str(OPERATION_MODE.FULL_CS), str(OPERATION_MODE.FULL_GBAFS)]:
+        if config.operation_mode in [str(OPERATION_MODE.FULL_GB_BC_FS), str(OPERATION_MODE.FULL_GB_AFS)]:
             sil_results['Silhouette'] = get_silhouette_value(X=data, labels=labels, centroids=centroids,
                                                              type='silhouette')
             sil_results['SS'] = get_silhouette_value(X=data, labels=labels, centroids=centroids, type='ss')
@@ -104,7 +104,7 @@ class ClusteringService:
                                        for name, value in result['silhouette'].items())
                 log_service.log(f'[Clustering Service] : Silhouette values for (k={k}) * {sil_values}')
 
-                if config.operation_mode in [str(OPERATION_MODE.CS), str(OPERATION_MODE.FULL_CS)]:
+                if config.operation_mode in [str(OPERATION_MODE.GB_BC_FS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
                     cost_values = ', '.join(f'({name}) - ({("%.4f" % value) if value is not None else "NA"})'
                                             for name, value in result['costs'].items())
                     log_service.log(f'[Clustering Service] : Costs values for (k={k}) * {cost_values}')
@@ -117,7 +117,7 @@ class ClusteringService:
             plot_silhouette(stage=stage,
                             fold_index=fold_index,
                             clustering_results=results)
-        if config.operation_mode in (str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)):
+        if config.operation_mode in (str(OPERATION_MODE.FULL_GB_AFS), str(OPERATION_MODE.FULL_GB_BC_FS)):
             plot_clustering(stage=stage,
                             extension=extension,
                             fold_index=fold_index,
@@ -128,7 +128,7 @@ class ClusteringService:
                                fold_index=fold_index,
                                data=graph.reduced_matrix,
                                clustering_results=results)
-        if config.operation_mode == str(OPERATION_MODE.FULL_CS) and extension == 'Updated':
+        if config.operation_mode == str(OPERATION_MODE.FULL_GB_BC_FS) and extension == 'Updated':
             plot_costs_to_silhouette(stage=stage,
                                      fold_index=fold_index,
                                      clustering_res=results)

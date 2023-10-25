@@ -21,7 +21,7 @@ def compile_train_results(classification_results: dict, clustering_results: dict
         'classification': {}
     }
 
-    if config.operation_mode in [str(OPERATION_MODE.FULL_GBAFS), str(OPERATION_MODE.FULL_CS)]:
+    if config.operation_mode in [str(OPERATION_MODE.FULL_GB_AFS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
         compiled_results['classification'] = compile_train_classification_results(results=classification_results)
 
     return compiled_results
