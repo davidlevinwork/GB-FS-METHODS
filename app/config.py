@@ -18,8 +18,9 @@ class TSNEAlgorithmConfig(BaseModel):
     perplexity_value: int
 
 
-class ConstraintSatisfaction(BaseModel):
+class BudgetConstraint(BaseModel):
     budget: float
+    generate_costs: bool
 
 
 class Config(BaseModel):
@@ -27,7 +28,7 @@ class Config(BaseModel):
     operation_mode: str
     tsne_algorithm: TSNEAlgorithmConfig
     cross_validation: CrossValidationConfig
-    constraint_satisfaction: ConstraintSatisfaction
+    budget_constraint: BudgetConstraint
 
 
 def load_yaml_config(file_path: str) -> Config:

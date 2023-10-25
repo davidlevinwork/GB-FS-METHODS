@@ -15,5 +15,6 @@ tsne_algorithm:
   iterations: 1000
   perplexity_value: 15
 
-constraint_satisfaction:
+budget_constraint:
   budget: 5
+  generate_costs: true
