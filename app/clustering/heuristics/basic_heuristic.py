@@ -44,7 +44,7 @@ class BasicHeuristic(IHeuristic):
         else:
             relevant_combinations = [combination for combination in all_combinations if
                                      sum(list(data_props.feature_costs.values())[feat] for feat in combination)
-                                     <= config.constraint_satisfaction.budget]
+                                     <= config.budget_constraint.budget]
 
         new_kmedoids = self._get_new_kmedoids(graph=graph,
                                               feature_combinations=relevant_combinations)

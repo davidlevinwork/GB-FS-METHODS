@@ -9,7 +9,7 @@ class IHeuristic(ABC):
     def __init__(self):
         super().__init__()
         self._counter = 0
-        self._budget = config.constraint_satisfaction.budget
+        self._budget = config.budget_constraint.budget
 
     @abstractmethod
     def __str__(self):

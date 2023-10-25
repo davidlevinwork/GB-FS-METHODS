@@ -1,13 +1,13 @@
 import numpy as np
 
 from ..config import config
+from .heuristics import GreedyHeuristic
 from ..models import GraphObject, DataProps
-from .heuristics import BasicHeuristic, GreedyHeuristic
 
 
 class HeuristicClusteringService:
     def __init__(self):
-        self.budget = config.constraint_satisfaction.budget
+        self.budget = config.budget_constraint.budget
         self.heuristic_methods = []
 
     def run(self, data_props: DataProps, graph: GraphObject, kmedoids: dict, silhouette: dict, k: int) -> dict:

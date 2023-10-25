@@ -21,7 +21,7 @@ def select_k_best_features(data: DataObject, k: int, algorithm: str):
     k_features_copy = deepcopy(k_features)
     while k_features_copy.columns.tolist():
         total_cost = sum_feature_costs(features=list(k_features_copy), data=data)
-        if total_cost <= config.constraint_satisfaction.budget:
+        if total_cost <= config.budget_constraint.budget:
             return len(k_features_copy.columns), k_features_copy
         else:
             k_features_copy.drop(k_features_copy.columns[-1], axis=1, inplace=True)

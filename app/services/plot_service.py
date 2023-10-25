@@ -311,7 +311,7 @@ def plot_costs_to_silhouette(clustering_res: list, stage: str, fold_index: int):
 
         # Budget
         c_index += 1
-        budget = config.constraint_satisfaction.budget
+        budget = config.budget_constraint.budget
         ax.axhline(y=budget, linestyle='dotted', c='black')
         ax.text(0, budget, f'Budget (={budget})', color='black')
 
