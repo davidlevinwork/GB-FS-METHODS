@@ -1,4 +1,4 @@
-# Graph-Based Feature Selection
+# Graph-Based Feature Selection Methods
 Official implementation of two novel graph based feature selection methods: 
 1. **GB-AFS:** Graph-Based Automatic Feature Selection [***(link to paper)***](https://arxiv.org/pdf/2309.02272.pdf)
 2. **GB-BC-FS:** Graph-Based Budget-Constrained Feature Selection [***(link to paper)***](https://arxiv.org/pdf/2309.02272.pdf)
