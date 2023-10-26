@@ -1,15 +1,15 @@
 # Graph-Based Feature Selection Methods
 Official implementation of two novel graph based feature selection methods: 
-1. **GB-AFS:** GB-AFS: ***"Graph-Based Automatic Feature Selection for Multi-Class Classification via Mean Simplified Silhouette"*** [**(link to paper)**](https://arxiv.org/pdf/2309.02272.pdf)
-2. **GB-BC-FS:** ***"Graph-Based Feature Selection Method Under Budget Constraints for Multi-Class Classification Problems"*** [**(link to paper)**](https://arxiv.org/pdf/2309.02272.pdf)
+1. GB-AFS: ***"Graph-Based Automatic Feature Selection for Multi-Class Classification via Mean Simplified Silhouette"*** [**(link to paper)**](https://arxiv.org/pdf/2309.02272.pdf)
+2. GB-BC-FS: ***"Graph-Based Feature Selection Method Under Budget Constraints for Multi-Class Classification Problems"*** [**(link to paper)**](https://arxiv.org/pdf/2309.02272.pdf)
 
 ## Setup Environment
 
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/davidlevinwork/GB-AFS.git
-cd GB-AFS
+git clone https://github.com/davidlevinwork/GB-FS-METHODS
+cd GB-FS-METHODS
 ```
 
 ### 2. Install Poetry (if not installed)
@@ -29,8 +29,6 @@ cd GB-AFS
  poetry install
  poetry shell
  ```
-
----
 
 ## Configuration File Explanation
 This section provides explanations for each parameter in the configuration file. 
