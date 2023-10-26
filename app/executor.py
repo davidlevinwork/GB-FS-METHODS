@@ -64,8 +64,11 @@ class Executor:
                                   k_range=[value['knee'] for key, value in knee_results.items() if key == 'Full MSS'])
 
         final_features = results['clustering'][0]['kmedoids']['medoids']
+        final_features_costs = list(list(data.data_props.feature_costs.values())[feature] for feature in final_features)
         log_service.log(f'[Executor] : ===> Final k=[{len(final_features)}] features selected are: '
-                        f'[{", ".join(map(str, final_features))}] <===')
+                        f'[{", ".join(map(str, final_features))}] ; '
+                        f'Budget used: ({sum(final_features_costs)}/{config.budget_constraint.budget}),'
+                        f'approx: {sum(final_features_costs)/config.budget_constraint.budget:.2f}% <===')
         return final_features
 
     def _get_train_evaluation(self, data: DataObject):
