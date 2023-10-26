@@ -5,6 +5,10 @@ from datetime import datetime
 class LogService:
     def __init__(self):
         try:
+            log_dir_name = os.path.join(os.getcwd(), "app", "outputs")
+            if not os.path.exists(log_dir_name):
+                os.makedirs(log_dir_name)
+
             open(log_file_name, 'w').close()
         except OSError as ex:
             print(f'Failed to create log file. Error: [{ex}]')
