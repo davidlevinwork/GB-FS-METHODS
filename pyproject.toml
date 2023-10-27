@@ -4,9 +4,11 @@ version = "1.0.0"
 description = "Graph-Based Feature Selection Methods"
 authors = ["David Levin <david.levin2@live.biu.ac.il>"]
 readme = "README.md"
+keywords = ["clustering", "feature selection", "machine learning", "dimensionality reduction", "constraint satisfaction"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+
 pandas = "1.5.3"
 pydantic = "^1.10.9"
 pyyaml = "^6.0"
