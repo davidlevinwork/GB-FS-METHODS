@@ -75,7 +75,7 @@ class Executor:
                         f'[{", ".join(map(str, final_features))}] <===')
         if config.operation_mode in [str(OPERATION_MODE.GB_BC_FS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
             log_service.log(f'[Executor] : ===> Budget used: '
-                            f'({sum(final_features_costs)}/{config.budget_constraint.budget}),'
+                            f'({sum(final_features_costs):.3f}/{config.budget_constraint.budget}), '
                             f'approx: {sum(final_features_costs) / config.budget_constraint.budget:.2f}% <===')
 
         return final_features
@@ -155,8 +155,11 @@ class Executor:
 
         classifications_res = []
         algorithms = ["Relief", "Fisher", "CFS", "MRMR", "Random"]
-        k = knee_results['Heuristic MSS']['knee'] if 'Heuristic MSS' in knee_results \
-            else knee_results['Full MSS']['knee']
+        if "GB_AFS" in config.operation_mode:
+            k = knee_results['MSS']['knee']
+        elif "GB_BC_FS" in config.operation_mode:
+            k = knee_results['Heuristic MSS']['knee'] if 'Heuristic MSS' in knee_results \
+                else knee_results['Full MSS']['knee']
 
         for algo in algorithms:
             new_k, new_X = select_k_best_features(k=k,
