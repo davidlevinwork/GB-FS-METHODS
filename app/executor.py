@@ -57,18 +57,27 @@ class Executor:
     def _run_test(self, data: DataObject, knee_results: dict) -> list:
         log_service.log(f'[Executor] : ******************** Test Stage ********************')
 
+        k_range = []
+        if "GB_AFS" in config.operation_mode:
+            k_range = [value['knee'] for key, value in knee_results.items() if key == 'MSS']
+        elif "GB_BC_FS" in config.operation_mode:
+            k_range = [value['knee'] for key, value in knee_results.items() if key == 'Full MSS']
+
         results = self._run_model(stage="Test",
                                   fold_index=0,
+                                  k_range=k_range,
                                   data_props=data.data_props,
-                                  data={'train': data.train_data},
-                                  k_range=[value['knee'] for key, value in knee_results.items() if key == 'Full MSS'])
+                                  data={'train': data.train_data})
 
         final_features = results['clustering'][0]['kmedoids']['medoids']
         final_features_costs = list(list(data.data_props.feature_costs.values())[feature] for feature in final_features)
         log_service.log(f'[Executor] : ===> Final k=[{len(final_features)}] features selected are: '
-                        f'[{", ".join(map(str, final_features))}] ; '
-                        f'Budget used: ({sum(final_features_costs)}/{config.budget_constraint.budget}),'
-                        f'approx: {sum(final_features_costs)/config.budget_constraint.budget:.2f}% <===')
+                        f'[{", ".join(map(str, final_features))}] <===')
+        if config.operation_mode in [str(OPERATION_MODE.GB_BC_FS), str(OPERATION_MODE.FULL_GB_BC_FS)]:
+            log_service.log(f'[Executor] : ===> Budget used: '
+                            f'({sum(final_features_costs)}/{config.budget_constraint.budget}),'
+                            f'approx: {sum(final_features_costs) / config.budget_constraint.budget:.2f}% <===')
+
         return final_features
 
     def _get_train_evaluation(self, data: DataObject):
