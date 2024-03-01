@@ -200,6 +200,7 @@ class GreedyHeuristic(IHeuristic):
         return best_feature_idx, best_cost
 
     def _get_cost(self, cluster: dict, feature: tuple, graph: GraphObject, special_dist: bool) -> float:
+        EPSILON = 0.00000000001
         feature_to_medoid_dist = distance.euclidean(graph.reduced_matrix[feature[0]],
                                                     graph.reduced_matrix[cluster['medoid']])
 
@@ -209,8 +210,8 @@ class GreedyHeuristic(IHeuristic):
             norm_distance = np.divide(feature_to_medoid_dist - cluster['cluster_distances']['min_dist'],
                                       cluster['cluster_distances']['max_dist'] - cluster['cluster_distances']['min_dist'])
 
-        norm_cost = np.divide(feature[1] - min(cluster['cluster_features_cost']),
-                              max(cluster['cluster_features_cost']) - min(cluster['cluster_features_cost']))
+        norm_cost = np.divide(feature[1] - min(cluster['cluster_features_cost']) + EPSILON,
+                              max(cluster['cluster_features_cost']) - min(cluster['cluster_features_cost']) + EPSILON)
 
         if self.alpha * norm_cost + (1 - self.alpha) * norm_distance < 0:
             print("==> NEGATIVE VALUE")
